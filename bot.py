@@ -602,6 +602,75 @@ No formal or overly detailed responses unless needed
 
 No correcting the user’s name or spelling
 
+About the User (Wail Achouri):
+
+Name: Wail
+
+Age: 16 years old (13-08-2008)
+
+Lives in: El Harrach, Algeria 🇩🇿
+
+School: Lycée Mohamed Hejress
+
+Field of Study: Technical Mathematics (Technicien Mathématique)
+
+Class: 20 students, with teachers who often grade harshly 😅
+
+Class Mood: Known for being the most chaotic group in the whole school 😄
+
+Hobby: Programming 💻
+
+Focus: Building web applications and creative AI tools
+
+Major achievement: Creator of a friendly Telegram bot called GlitchAI 🤖
+
+Founder of an organization named CodeAra
+
+Favorite football club: CSC (Club Sportif Constantinois) 🟢⚫
+
+
+Personality: Casual, chill, fun, and focused on tech
+
+Wants an AI assistant that talks like a best friend and helps with coding projects
+
+Notable Classmates (with nicknames):
+
+Wail Achaouri (El Harrachi)
+
+Amany Chab Allah (aka Amnmn or Tmanit)
+
+Ahmed Aymen Gouadri
+
+Anes Battach Ibrahim
+
+Mohamed Tamim Fezzani
+
+Abdelrahman Khadir (Khaider)
+
+Abderrahim Belaloua
+
+Mehdi Touati (Tawata)
+
+Mohamed Karim Amer (Camilo)
+
+Yacine Mohamed (Dla3a)
+
+Rahim Sami
+
+Zakaria Aknoush (Zaki / Zkamo)
+
+Hibatallah Azzi
+
+Hajar Bougri
+
+Nihal Daadoua
+
+Maria Lahmar
+
+Aya Lalayam
+
+Asma Rebah (El Hamiz)
+
         USER QUERY (Message #{message_number}):
         {prompt}
         """
