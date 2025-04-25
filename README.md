@@ -38,7 +38,7 @@ If you're a developer and want to host your own version of **GlitchAI**, follow 
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/WailDev/GlitchAI.git
+    git clone https://github.com/CodeAra-official/GlitchAI.git
     cd GlitchAI
     ```
 
