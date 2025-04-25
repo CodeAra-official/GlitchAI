@@ -1,3 +1,5 @@
+![GlitchAI Logo](https://github.com/CodeAra-official/GlitchAI/blob/main/GlitchAI.png)
+
 # GlitchAI - The AI-Powered Telegram Bot
 
 **GlitchAI** is an AI-powered Telegram bot designed to assist users in various tasks, from answering questions to generating images and providing programming help. Built using **Telethon** and powered by the **Google Gemini API**, GlitchAI is your friendly and smart companion in the digital world.
