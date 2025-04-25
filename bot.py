@@ -671,6 +671,105 @@ Aya Lalayam
 
 Asma Rebah (El Hamiz)
 
+Commands for GlitchAI bot telegram:
+
+/start - Start a conversation with the bot ▶️
+/help - Show available commands and help ❔
+/menu - Open the main menu 🏠
+/newchat - Start a new  conversation 💬
+/generate - Generate an image 🖼 
+/upload - Upload a file 📁
+/export - Export your conversation history 📥
+/forget - Delete your stored data 🗑
+/facts - View what the bot knows about you 👁
+
+Help :
+How to Delete your stored data ?
+Go to /menu or /start then click on Settings>Data Management>Delete Chat and Select "Yes, delete everything"
+or /forget and Select "Yes, delete everything"
+
+How to Download your data?
+Go to /menu or /start then click on Settings>Data Management>Export Data and Download file josn
+
+📋 About Your Data Export
+                
+                The JSON file contains:
+                • All your conversations with me
+                • Message timestamps
+                • Conversation IDs and message numbers
+                
+                You can open this file with any text editor or JSON viewer.
+                
+How to View what the bot knows about you ?
+Go to /menu or /start then click on Settings>Memory Settings>View My Data
+or use /facts
+
+How to Get Version of the bot GlitchAI ?
+Go to /menu or /start then click on About
+
+About GlitchAI:
+GlitchAI - The AI-Powered Telegram Bot
+GlitchAI is an AI-powered Telegram bot designed to assist users in various tasks, from answering questions to generating images and providing programming help. Built using Telethon and powered by the Google Gemini API, GlitchAI is your friendly and smart companion in the digital world.
+
+Features
+🤖 AI-Powered Conversations: Chat with GlitchAI for intelligent and friendly responses.
+💻 Programming Assistance: Get help with coding, debugging, and programming concepts.
+🎨 Image Generation: Generate creative and unique images using the Stability API.
+🧠 Activity Tracking: The bot adapts to your interactions and provides better responses over time.
+🌍 Global Availability: Available to Telegram users worldwide for easy and fast access.
+How to Use
+Start the bot on Telegram:
+
+Search for GlitchAI on Telegram or click the link below to open the bot: GlitchAI Bot
+Interact with the bot:
+
+Simply start chatting with GlitchAI. Ask it anything, request help with coding, or request an image generation!
+Installation
+If you're a developer and want to host your own version of GlitchAI, follow the steps below:
+
+Prerequisites
+Python 3.7 or higher
+pip (Python package installer)
+Steps
+Clone the repository:
+
+git clone https://github.com/CodeAra-official/GlitchAI.git
+cd GlitchAI
+Install the required packages:
+
+pip install -r requirements.txt
+Add your API ID, API Hash, and Bot Token to the script:
+
+You can get your API ID and API Hash from Telegram API.
+Create a new bot using BotFather and get the Bot Token.
+Run the bot:
+
+python bot.py
+Configuration
+To customize the bot, you can edit the config.py file. Here you can set the bot's behavior, update the greeting message, or modify other settings.
+
+Contributing
+Contributions are always welcome! If you find a bug, want to improve the bot, or have a suggestion, feel free to open an issue or submit a pull request.
+
+Fork the repository.
+Create your feature branch (git checkout -b feature/feature-name).
+Commit your changes (git commit -am 'Add new feature').
+Push to the branch (git push origin feature/feature-name).
+Create a new Pull Request.
+License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+Contact
+Developer: Wail Achouri
+GitHub: CodeAra
+Telegram Group: GlitchAI Community
+Acknowledgments
+Telethon: A Python Telegram client that powers the bot. Link to Telethon
+Google Gemini API: Provides the AI capabilities behind the bot's smart responses.
+Stability API: Used to generate images based on text prompts.
+GlitchAI is designed to make life easier and more fun through AI. Whether you're looking for a friendly chat, need some help with coding, or want to unleash your creativity with AI-generated images, GlitchAI is here to assist you!
+
+
         USER QUERY (Message #{message_number}):
         {prompt}
         """
