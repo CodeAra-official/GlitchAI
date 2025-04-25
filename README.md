@@ -1,4 +1,4 @@
-![GlitchAI Logo](https://github.com/CodeAra-official/GlitchAI/blob/main/GlitchAI.png)
+<img src="https://github.com/CodeAra-official/GlitchAI/blob/main/GlitchAI.png" width="100" style="border-radius: 50%;">
 
 # GlitchAI - The AI-Powered Telegram Bot
 
