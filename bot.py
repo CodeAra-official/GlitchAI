@@ -44,11 +44,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Get credentials
-API_ID = int(os.getenv("API_ID", "21403141"))
-API_HASH = os.getenv("API_HASH", "74e9c96971cd422c1ba9878a13ea3db1")
-BOT_TOKEN = os.getenv("BOT_TOKEN", "7147482273:AAGzFsBUIlDcJSFUnzpfajT7TUxNwJwwCsU")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyCJ_xntikPVEL8syCdu1CBPl-95wkszgH4")
-STABILITY_API_KEY = os.getenv("STABILITY_API_KEY", "sk-t9NGPiZaFHqjz7IoTCmI9EREPvXSlzQ3QFil53FqVsi4yjhj")
+API_ID = int(os.getenv("API_ID"))
+API_HASH = os.getenv("API_HASH")
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
 
 # Validate credentials
 if not all([API_ID, API_HASH, BOT_TOKEN, GEMINI_API_KEY]):
