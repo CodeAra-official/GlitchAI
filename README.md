@@ -87,7 +87,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Contact
 
 - **Developer**: [Wail Achouri](https://t.me/wailachouriMT)
-- **GitHub**: [https://github.com/WailDev/GlitchAI](https://github.com/CodeAra-official/GlitchAI)
+- **GitHub**: [CodeAra](https://github.com/CodeAra-official)
 - **Telegram Group**: [GlitchAI Community](https://t.me/Code_Ara)
 
 ---
