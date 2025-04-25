@@ -769,6 +769,71 @@ Google Gemini API: Provides the AI capabilities behind the bot's smart responses
 Stability API: Used to generate images based on text prompts.
 GlitchAI is designed to make life easier and more fun through AI. Whether you're looking for a friendly chat, need some help with coding, or want to unleash your creativity with AI-generated images, GlitchAI is here to assist you!
 
+Code Source
+https://github.com/CodeAra-official/GlitchAI
+
+Telegram bot link
+https://t.me/GlitchAI_1_Bot
+Telegram Channel link
+https://t.me/Code_Ara
+Number Phone Wail Achouri: +213 562 15 28 24
+Discord : https://discord.gg/573r3gsgju
+
+MIT License
+
+Copyright (c) 2025 CodeAra
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the “Software”), to deal
+in the Software without restriction, including without limitation the rights  
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      
+copies of the Software, and to permit persons to whom the Software is         
+furnished to do so, subject to the following conditions:                       
+
+The above copyright notice and this permission notice shall be included in     
+all copies or substantial portions of the Software.                            
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER        
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN     
+THE SOFTWARE.
+
+# Terms of Use
+
+By using this bot (GlitchAI), you agree to the following terms:
+
+1. **Usage**
+   - The bot is provided for personal, educational, or entertainment purposes only.
+   - You must not use the bot to engage in harmful, abusive, illegal, or unethical activities.
+
+2. **Data and Privacy**
+   - The bot may collect basic information such as user ID and messages for functionality or moderation purposes.
+   - No personal data is stored, sold, or shared with third parties.
+   - By using the bot, you consent to basic logging for monitoring and improvement.
+
+3. **Limitations**
+   - The developers are not responsible for any damage, data loss, or consequences caused by using this bot.
+   - The bot is provided “as is” with no guarantees of uptime, functionality, or support.
+
+4. **Prohibited Actions**
+   - You may not reverse engineer, modify, or attempt to harm the bot in any way.
+   - Spamming, flooding, or exploiting the bot is strictly forbidden.
+   - Using the bot for harassment, hate speech, or violating platform rules is prohibited.
+
+5. **Modifications**
+   - The bot owner reserves the right to update these terms at any time without prior notice.
+   - Continued use of the bot means you accept any future updates to the terms.
+
+6. **License**
+   - The bot is open source under the MIT License.
+   - You are free to use, modify, and distribute it, but must credit the original author.
+
+---
+
+**If you do not agree with these terms, please do not use the bot.**
 
         USER QUERY (Message #{message_number}):
         {prompt}
