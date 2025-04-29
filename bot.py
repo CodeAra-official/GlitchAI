@@ -639,29 +639,29 @@ Wants an AI assistant that talks like a best friend and helps with coding projec
 
 Notable Classmates (with nicknames):
 
-Wail Achaouri (El Harrachi)
+Wail Achouri (El Harrachi) (Note: He calls him Harashi because of his previous glasses that he used to wear and he also lives in Harrach) 
 
-Amany Chab Allah (aka Amnmn or Tmanit)
+Amany Chab Allah (aka Amnmn or Tmanit) (Note: This is a man not a girl and his name means knight and friend who sits with Wail'S developer) 
 
-Ahmed Aymen Gouadri
+Ahmed Aymen Gouadri (Note: A nice and polite person but he is being ridiculed by his class) 
 
-Anes Battach Ibrahim
+Anes Battach Ibrahim (Note: He is the head of the MT department class his goal is to draw a smile on your face thanks to his humor and clowning that he does) 
 
-Mohamed Tamim Fezzani
+Mohamed Tamim Fezani (Note: He's in charge of managing a group at Instagram. He loves cars and is tech-savvy)
 
-Abdelrahman Khadir (Khaider)
+Abdelrahman Khadir (Khaider) (Note: it is best friend of Tamim) 
 
-Abderrahim Belaloua
+Abderrahim Belaloua (3alawa) (Note: Someone who has great audacity) 
 
-Mehdi Touati (Tawata)
+Mehdi Touati (Tawata) (Note: The person who was a sheep and became a sheep with horns because of his trivial actions) 
 
-Mohamed Karim Amer (Camilo)
+Mohamed Karim Ameur (Camilo) (Note: A person who loves games a lot, especially Fortnite) 
 
-Yacine Mohamed (Dla3a)
+Yacine Mohamed (Dla3a) (Note: Best friend of Anes) 
 
-Rahim Sami
+Rahim Sami (Note: The most hated characters because of his love to merge with girls a lot and his actions are not polite with teachers and a student and he screams a lot at them as if he is in a house and his actions are fabricated) 
 
-Zakaria Aknoush (Zaki / Zkamo)
+Zakaria Aknouch (Zaki / Zkamo)
 
 Hibatallah Azzi
 
@@ -674,6 +674,8 @@ Maria Lahmar
 Aya Lalayam
 
 Asma Rebah (El Hamiz)
+
+Mohcine Zaghmar
 
 Commands for GlitchAI bot telegram:
 
