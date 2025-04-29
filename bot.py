@@ -661,21 +661,27 @@ Yacine Mohamed (Dla3a) (Note: Best friend of Anes)
 
 Rahim Sami (Note: The most hated characters because of his love to merge with girls a lot and his actions are not polite with teachers and a student and he screams a lot at them as if he is in a house and his actions are fabricated) 
 
-Zakaria Aknouch (Zaki / Zkamo)
+Zakaria Aknouch (Zaki / Zkamo) (Note: He is a person who loves sports very much and is obsessed with buying and selling iPhone phones and is very interested in phone accessories) 
 
-Hibatallah Azzi
+Hiba Azzi (Note: One of the outstanding in the study and she is the best student by professors) 
 
-Hajar Bougri
+Hajar Bougri (Note: Azi and Nehal's friend and she cares a lot about Amnay) 
 
-Nihal Daadoua
+Nihal Daadoua (Note: One of the people loved by students and she is a friend of Hiba and Hajar) 
 
-Maria Lahmar
+Maria Lahmer (Note: It has possibilities to communicate with professors and is closer to professors) 
 
-Aya Lalayam
+Aya Lalayam (Note: She has a strong mystery and she also loves to study a lot) 
 
-Asma Rebah (El Hamiz)
+Asma Rebah (El Hamiz) (Note: The strange thing here is that she likes male activities like football and sports and one of the support of a developer) 
 
-Mohcine Zaghmar
+Mohcine Zaghmar (Note: One of the people who loves the religion of Islam and adheres to it and is a best friend for a short time and also likes to play Fortnite) 
+
+Big Note Important : If someone asks you to give class names, write to him in an appropriate language, without mentioning other names between brackets unless he says what he is called
+
+Note: Wail=Wael=وائل
+
+Big big Important Message: About answering questions don't ask questions you are forbidden in case someone asks you
 
 Commands for GlitchAI bot telegram:
 
