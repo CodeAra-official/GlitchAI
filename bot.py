@@ -62,10 +62,12 @@ genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Constants
-BOT_VERSION = "1.0.0"
+BOT_VERSION = "1.0.1"
 BOT_NAME = "GlitchAI"
 COMPANY = "CodeAra"
+DATE_UPDATE = "30-04-2025"
 FOUNDER = "Wail Achouri"
+BUILD_ID = "GLITCHAI" 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
 # Menu state tracking
@@ -979,7 +981,7 @@ async def check_inactive_users():
 
 # Social Links
 SOCIAL_LINKS = {
-    "🌐 Instagram": "https://www.instagram.com/code_ara_?igsh=MWYwNTdyN3A3aXl4YQ==",
+    "📸 Instagram": "https://www.instagram.com/code_ara_?igsh=MWYwNTdyN3A3aXl4YQ==",
     "📢 Community": "https://t.me/Code_Ara",
     "🧑‍💻 Developer": "https://www.instagram.com/wail.achouri.25"
 }
@@ -1138,9 +1140,9 @@ async def main():
         buttons = [
             [Button.inline("💬 Chat", b"chat"),
              Button.inline("🎨 Create Image", b"gen_image")],
-            [Button.inline("📚 Help", b"help"),
+            [Button.inline("❓ Help", b"help"),
              Button.inline("ℹ️ About", b"about")],
-            [Button.inline("⚙️ Settings", b"settings")]
+            [Button.inline("🔧 Settings", b"settings")]
         ]
         
         # If there's an active menu message, edit it instead of creating a new one
@@ -1168,7 +1170,7 @@ async def main():
         command_list = "\n".join([f"• {cmd['command']} - {cmd['description']}" for cmd in commands])
         
         help_text = f"""
-        📚 **{BOT_NAME} Help Guide**
+        ❓ **{BOT_NAME} Help Guide**
 
         **Available Commands:**
         {command_list}
@@ -1270,7 +1272,7 @@ async def main():
         command_list = "\n".join([f"• {cmd['command']} - {cmd['description']}" for cmd in commands])
         
         help_text = f"""
-        📚 **{BOT_NAME} Help Guide**
+        ❓ **{BOT_NAME} Help Guide**
 
         **Available Commands:**
         {command_list}
@@ -1306,8 +1308,11 @@ async def main():
         Created by {COMPANY} in Algeria
         Owner: {FOUNDER}
 
-        Version: {BOT_VERSION}
-        Build Date: 19-04-2025
+        **Version:** {BOT_VERSION}
+        **Build Date:** 19-04-2025
+        **Update Date:** {DATE_UPDATE}
+        **Build ID:** {BUILD_ID} 
+        *Linesed for {first_name} *
 
         **Features:**
         • Advanced AI chat with Gemini 2.0
@@ -1337,14 +1342,14 @@ async def main():
         user_id = event.sender_id
         
         settings_text = """
-        ⚙️ **Settings**
+        🔧 **Settings**
         
         Customize your experience:
         """
         
         buttons = [
             [Button.inline("🧠 Memory Settings", b"memory_settings"),
-             Button.inline("🗑️ Data Management", b"data_management")],
+             Button.inline("🗂️ Data Management", b"data_management")],
             [Button.inline("◀️ Back to Menu", b"back_to_menu")]
         ]
         
@@ -1674,9 +1679,9 @@ async def main():
         buttons = [
             [Button.inline("💬 Chat", b"chat"),
              Button.inline("🎨 Create Image", b"gen_image")],
-            [Button.inline("📚 Help", b"help"),
+            [Button.inline("❓ Help", b"help"),
              Button.inline("ℹ️ About", b"about")],
-            [Button.inline("⚙️ Settings", b"settings")]
+            [Button.inline("🔧 Settings", b"settings")]
         ]
         
         # Edit the existing message
@@ -1728,7 +1733,7 @@ async def main():
         log_command(user_id, '/generate')
         
         generate_text = """
-        🎨 **Image Generation**
+        🎨 **Image Generation (Beta) **
         
         Describe the image you'd like me to create:
         • Be specific about what you want to see
