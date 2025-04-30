@@ -1114,9 +1114,9 @@ async def main():
         buttons = [
             [Button.inline("💬 Chat", b"chat"),
              Button.inline("🎨 Create Image", b"gen_image")],
-            [Button.inline("📚 Help", b"help"),
+            [Button.inline("❓ Help", b"help"),
              Button.inline("ℹ️ About", b"about")],
-            [Button.inline("⚙️ Settings", b"settings")]
+            [Button.inline("🔧 Settings", b"settings")]
         ]
 
         # Store this as the active menu message
@@ -1311,8 +1311,7 @@ async def main():
         **Version:** {BOT_VERSION}
         **Build Date:** 19-04-2025
         **Update Date:** {DATE_UPDATE}
-        **Build ID:** {BUILD_ID} 
-        *Linesed for {first_name} *
+        **Build ID:** {BUILD_ID}
 
         **Features:**
         • Advanced AI chat with Gemini 2.0
