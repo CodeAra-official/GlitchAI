@@ -62,12 +62,12 @@ genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Constants
-BOT_VERSION = "1.5.0"
+BOT_VERSION = "2.0.0"
 BOT_NAME = "GlitchAI"
 COMPANY = "CodeAra"
 DATE_UPDATE = "01-05-2025"
 FOUNDER = "Wail Achouri"
-BUILD_ID = "GLITCHAI" 
+BUILD_ID = "GlitchAI Cyan Edition" 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
 # Menu state tracking
@@ -1133,18 +1133,18 @@ async def main():
         command_list = "\n".join([f"• {cmd['command']} - {cmd['description']}" for cmd in commands])
         
         help_text = f"""
-        ❓ **{BOT_NAME} Help Guide**
+❓ **{BOT_NAME} Help Guide**
 
-        **Available Commands:**
-        {command_list}
+**Available Commands:**
+{command_list}
         
-        **Quick Tips:**
-        • Just type a message to chat with me
-        • Use inline buttons for navigation
-        • I remember our conversations and learn from them
-        • Ask me anything, and I'll do my best to help!
+**Quick Tips:**
+• Just type a message to chat with me
+• Use inline buttons for navigation
+• I remember our conversations and learn from them
+• Ask me anything, and I'll do my best to help!
         
-        Need more help? Join our community: {SOCIAL_LINKS["📢 Community"]}
+Need more help? Join our community: {SOCIAL_LINKS["📢 Community"]}
         """
         
         buttons = [Button.inline("◀️ Back to Menu", b"back_to_menu")]
@@ -1203,15 +1203,15 @@ async def main():
         user_id = event.sender_id
         
         terms_text = """
-        🤝 **Our Friendship Rules:**
+🤝 **Our Friendship Rules:**
         
-        1. Be kind to each other
-        2. No bad vibes allowed
-        3. Have fun together!
-        4. I'll remember our chats to serve you better
-        5. You can delete your data anytime
+1. Be kind to each other
+2. No bad vibes allowed
+3. Have fun together!
+4. I'll remember our chats to serve you better
+5. You can delete your data anytime
         
-        That's it! Simple, right? 😄
+That's it! Simple, right? 😄
         """
         
         buttons = [Button.inline("◀️ Back", b"back_to_menu")]
@@ -1235,18 +1235,18 @@ async def main():
         command_list = "\n".join([f"• {cmd['command']} - {cmd['description']}" for cmd in commands])
         
         help_text = f"""
-        ❓ **{BOT_NAME} Help Guide**
+❓ **{BOT_NAME} Help Guide**
 
-        **Available Commands:**
-        {command_list}
+**Available Commands:**
+{command_list}
         
-        **Quick Tips:**
-        • Just type a message to chat with me
-        • Use inline buttons for navigation
-        • I remember our conversations and learn from them
-        • Ask me anything, and I'll do my best to help!
+**Quick Tips:**
+• Just type a message to chat with me
+• Use inline buttons for navigation
+• I remember our conversations and learn from them
+• Ask me anything, and I'll do my best to help!
         
-        Need more help? Join our community: {SOCIAL_LINKS["📢 Community"]}
+Need more help? Join our community: {SOCIAL_LINKS["📢 Community"]}
         """
         
         buttons = [Button.inline("◀️ Back", b"back_to_menu")]
@@ -1266,23 +1266,23 @@ async def main():
         user_id = event.sender_id
         
         about_text = f"""
-        **ℹ️ About {BOT_NAME} :**
-        Copyright (c) 2025 CodeAra
+**ℹ️ About {BOT_NAME} :**
+Copyright (c) 2025 CodeAra
 
-        Designed by {COMPANY} in Harrach
+Designed by {COMPANY} in Harrach
 
-        **🧑‍💻 Owner:** {FOUNDER}
-        **🔢 Version:** {BOT_VERSION}
-        **📅 Build Date:** 19-04-2025
-        **⬆️ Update Date:** {DATE_UPDATE}
-        **🔤 Build ID:** {BUILD_ID}
+**🧑‍💻 Owner:** {FOUNDER}
+**🔢 Version:** {BOT_VERSION}
+**📅 Build Date:** 19-04-2025
+**⬆️ Update Date:** {DATE_UPDATE}
+**🔤 Build ID:** {BUILD_ID}
 
-        **✨ What's New**
-        • Advanced AI chat with Gemini 2.0 🤖
-        • Conversation memory & learning 🧠
-        • Numbered message tracking 🔎
-        • Image generation 🌉
-        • Data export & privacy controls 🗂️
+**✨ What's New**
+• Advanced AI chat with Gemini 2.0 🤖
+• Conversation memory & learning 🧠
+• Numbered message tracking 🔎
+• Image generation 🌉
+• Data export & privacy controls 🗂️
 
         """
         
@@ -1303,9 +1303,9 @@ async def main():
         user_id = event.sender_id
         
         settings_text = """
-        🔧 **Settings**
+🔧 **Settings**
         
-        Customize your experience:
+Choose an option:
         """
         
         buttons = [
@@ -1330,17 +1330,17 @@ async def main():
         first_name = await get_user_name(user_id)
         
         chat_text = f"""
-        💬 **Chat Mode**
+💬 **Chat Mode**
         
-        Hey {first_name}! I'm ready to chat with you. Just type a message, and I'll respond!
+Hey {first_name}! I'm ready to chat with you. Just type a message, and I'll respond!
         
-        Need ideas? You could:
-        • Ask me a question
-        • Tell me about your day
-        • Discuss a topic you're interested in
-        • Get help with a problem
+Need ideas? You could:
+• Ask me a question 🗨️
+• Tell me about your day 💡
+• Discuss a topic you're interested in 📄
+• Get help with a problem 🪛
         
-        I'll remember our conversation and learn from it.
+I'll remember our conversation and learn from it.
         """
         
         buttons = [
@@ -1389,14 +1389,14 @@ async def main():
         user_id = event.sender_id
         
         image_prompt_text = """
-        🎨 **Image Generation**
+🎨 **Image Generation (Beta) **
         
-        Describe the image you'd like me to create:
-        • Be specific about what you want to see
-        • Include details about style, mood, and elements
-        • Example: "A sunset over mountains with a lake in the foreground, watercolor style"
-        
-        Type your description now, and I'll create the image!
+Describe the image you'd like me to create:
+• Be specific about what you want to see
+• Include details about style, mood, and elements
+• Example: "A sunset over mountains with a lake in the foreground, watercolor style"
+       
+Type your description now, and I'll create the image!
         """
         
         buttons = [Button.inline("◀️ Back", b"back_to_menu")]
@@ -1417,9 +1417,9 @@ async def main():
         user_id = event.sender_id
         
         memory_text = """
-        🧠 **Memory Settings**
+🧠 **Memory Settings**
         
-        Control how I remember and learn from our conversations:
+Control how I remember and learn from our conversations:
         """
         
         buttons = [
@@ -1526,14 +1526,14 @@ async def main():
             await client.send_message(
                 user_id,
                 """
-                📋 **About Your Data Export**
+📋 **About Your Data Export**
                 
-                The JSON file contains:
-                • All your conversations with me
-                • Message timestamps
-                • Conversation IDs and message numbers
-                
-                You can open this file with any text editor or JSON viewer.
+The JSON file contains:
+• All your conversations with me 🗨️
+• Message timestamps 🕒
+• Conversation IDs and message numbers 🔢
+
+You can open this file with any text editor or JSON viewer.
                 """
             )
         else:
@@ -1547,14 +1547,14 @@ async def main():
         user_id = event.sender_id
         
         delete_text = """
-        ⚠️ **Delete Your Data**
+⚠️ **Delete Your Data**
         
-        This will delete ALL your data, including:
-        • Conversation history
-        • Learned facts about you
-        • Preferences and settings
+This will delete ALL your data, including:
+• Conversation history 🕒
+• Learned facts about you 🧠
+• Preferences and settings 🔧
         
-        This action CANNOT be undone. Are you sure?
+This action CANNOT be undone. Are you sure?
         """
         
         buttons = [
@@ -1609,12 +1609,12 @@ async def main():
             success_text = """
             ✅ **Data Deleted Successfully**
             
-            All your data has been deleted. I've forgotten:
-            • Our conversation history
-            • Facts I learned about you
-            • Your preferences and interests
+All your data has been deleted. I've forgotten:
+• Our conversation history 🕒
+• Facts I learned about you 🧠
+• Your preferences and interests 👁️‍🗨️
             
-            We're starting fresh!
+We're starting fresh!
             """
             
             buttons = [Button.inline("◀️ Back to Menu", b"back_to_menu")]
@@ -1632,9 +1632,9 @@ async def main():
         first_name = await get_user_name(user_id)
         
         menu_msg = f"""
-        🌟 {BOT_NAME} Menu 🌟
+🌟 {BOT_NAME} Menu 🌟
         
-        Hey {first_name}! What would you like to do today?
+Hey {first_name}! What would you like to do today?
         """
         
         buttons = [
@@ -1661,17 +1661,17 @@ async def main():
         log_command(user_id, '/upload')
         
         upload_text = """
-        📁 **File Upload**
+📁 **File Upload (Beta)**
         
-        You can send me any file up to 5MB! I'll keep it safe for you.
+You can send me any file up to 5MB! I'll keep it safe for you.
         
-        Supported file types:
-        • Images (jpg, png, etc.)
-        • Documents (pdf, docx, txt, etc.)
-        • Audio files
-        • Video files (small clips)
+Supported file types:
+• Images (jpg, png, etc.) 🖼️
+• Documents (pdf, docx, txt, etc.) 📄
+• Audio files 🎵
+• Video files (small clips) 📹
         
-        Just send the file as an attachment.
+Just send the file as an attachment.
         """
         
         buttons = [Button.inline("◀️ Back to Menu", b"back_to_menu")]
@@ -1694,14 +1694,14 @@ async def main():
         log_command(user_id, '/generate')
         
         generate_text = """
-        🎨 **Image Generation (Beta) **
+🎨 **Image Generation (Beta) **
         
-        Describe the image you'd like me to create:
-        • Be specific about what you want to see
-        • Include details about style, mood, and elements
-        • Example: "A sunset over mountains with a lake in the foreground, watercolor style"
+Describe the image you'd like me to create:
+• Be specific about what you want to see
+• Include details about style, mood, and elements
+• Example: "A sunset over mountains with a lake in the foreground, watercolor style"
         
-        Type your description now, and I'll create the image!
+Type your description now, and I'll create the image!
         """
         
         buttons = [Button.inline("◀️ Back to Menu", b"back_to_menu")]
@@ -1743,14 +1743,14 @@ async def main():
         log_command(user_id, '/forget')
         
         delete_text = """
-        ⚠️ **Delete Your Data**
+⚠️ **Delete Your Data**
         
-        This will delete ALL your data, including:
-        • Conversation history
-        • Learned facts about you
-        • Preferences and settings
+This will delete ALL your data, including:
+• Conversation history 🕒
+• Learned facts about you 🧠
+• Preferences and settings 🔧
         
-        This action CANNOT be undone. Are you sure?
+This action CANNOT be undone. Are you sure?
         """
         
         buttons = [
