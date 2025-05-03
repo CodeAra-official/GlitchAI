@@ -20,7 +20,7 @@
 
 1. **Start the bot on Telegram**:
    - Search for **GlitchAI** on Telegram or click the link below to open the bot:
-     [GlitchAI Bot](https://t.me/GlitchAI_1_Bot)
+     [GlitchAI Bot](https://t.me/GlitchAI_DEV_Bot)
 
 2. **Interact with the bot**:
    - Simply start chatting with GlitchAI. Ask it anything, request help with coding, or request an image generation!
