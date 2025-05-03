@@ -1101,7 +1101,8 @@ async def main():
         """
         
         buttons = [
-            [Button.inline("💬 Chat", b"chat"), 
+            [Button.inline("💬 Chat", b"chat"),
+             Button.inline("🎨 Create Image", b"gen_image")],
             [Button.inline("❓ Help", b"help"),
              Button.inline("ℹ️ About", b"about")],
             [Button.inline("🔧 Settings", b"settings")]
@@ -1638,6 +1639,7 @@ Hey {first_name}! What would you like to do today?
         
         buttons = [
             [Button.inline("💬 Chat", b"chat"),
+             Button.inline("🎨 Create Image", b"gen_image")],
             [Button.inline("❓ Help", b"help"),
              Button.inline("ℹ️ About", b"about")],
             [Button.inline("🔧 Settings", b"settings")]
