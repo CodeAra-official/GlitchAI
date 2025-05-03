@@ -654,8 +654,8 @@ Commands for GlitchAI bot telegram:
 /help - Show available commands and help ❔
 /menu - Open the main menu 🏠
 /newchat - Start a new  conversation 💬
-/generate - Generate an image 🖼 
-/upload - Upload a file 📁
+/generate - Generate an image (Beta) 🖼 
+/upload - Upload a file (Beta) 📁
 /export - Export your conversation history 📥
 /forget - Delete your stored data 🗑
 /facts - View what the bot knows about you 👁
@@ -691,7 +691,7 @@ GlitchAI is an AI-powered Telegram bot designed to assist users in various tasks
 Features
 🤖 AI-Powered Conversations: Chat with GlitchAI for intelligent and friendly responses.
 💻 Programming Assistance: Get help with coding, debugging, and programming concepts.
-🎨 Image Generation: Generate creative and unique images using the Stability API.
+🎨 Image Generation (Beta) : Generate creative and unique images using the Stability API.
 🧠 Activity Tracking: The bot adapts to your interactions and provides better responses over time.
 🌍 Global Availability: Available to Telegram users worldwide for easy and fast access.
 How to Use
@@ -1067,8 +1067,8 @@ async def main():
         Here's what I can do:
         • Chat about anything 💬
         • Remember our conversations 🧠
-        • Generate cool images 🎨
-        • Handle your files 📁
+        • Generate cool images (Beta) 🎨
+        • Handle your files (Beta) 📁
         • Learn your preferences over time 📊
 
         Just type a message to start chatting or use the menu below!
@@ -1076,7 +1076,7 @@ async def main():
 
         buttons = [
             [Button.inline("💬 Chat", b"chat"),
-             Button.inline("🎨 Create Image", b"gen_image")],
+             Button.inline("🎨 Create Image (Beta)", b"gen_image")],
             [Button.inline("❓ Help", b"help"),
              Button.inline("ℹ️ About", b"about")],
             [Button.inline("🔧 Settings", b"settings")]
@@ -1102,7 +1102,7 @@ async def main():
         
         buttons = [
             [Button.inline("💬 Chat", b"chat"),
-             Button.inline("🎨 Create Image", b"gen_image")],
+             Button.inline("🎨 Create Image (Beta)", b"gen_image")],
             [Button.inline("❓ Help", b"help"),
              Button.inline("ℹ️ About", b"about")],
             [Button.inline("🔧 Settings", b"settings")]
@@ -1281,7 +1281,7 @@ Designed by {COMPANY} in Harrach
 • Advanced AI chat with Gemini 2.0 🤖
 • Conversation memory & learning 🧠
 • Numbered message tracking 🔎
-• Image generation 🌉
+• Image generation (Beta) 🖼️
 • Data export & privacy controls 🗂️
 
         """
@@ -1639,7 +1639,7 @@ Hey {first_name}! What would you like to do today?
         
         buttons = [
             [Button.inline("💬 Chat", b"chat"),
-             Button.inline("🎨 Create Image", b"gen_image")],
+             Button.inline("🎨 Create Image (Beta)", b"gen_image")],
             [Button.inline("❓ Help", b"help"),
              Button.inline("ℹ️ About", b"about")],
             [Button.inline("🔧 Settings", b"settings")]
