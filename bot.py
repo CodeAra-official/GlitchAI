@@ -1138,11 +1138,11 @@ async def main():
 **Available Commands:**
 {command_list}
         
-**Quick Tips:**
-• Just type a message to chat with me
-• Use inline buttons for navigation
-• I remember our conversations and learn from them
-• Ask me anything, and I'll do my best to help!
+**💡 Quick Tips:**
+• Just type a message to chat with me 😊
+• Use inline buttons for navigation ⌨️
+• I remember our conversations and learn from them 🧠
+• Ask me anything, and I'll do my best to help! 😉
         
 Need more help? Join our community: {SOCIAL_LINKS["📢 Community"]}
         """
@@ -1205,11 +1205,11 @@ Need more help? Join our community: {SOCIAL_LINKS["📢 Community"]}
         terms_text = """
 🤝 **Our Friendship Rules:**
         
-1. Be kind to each other
-2. No bad vibes allowed
-3. Have fun together!
-4. I'll remember our chats to serve you better
-5. You can delete your data anytime
+1. Be kind to each other 😊
+2. No bad vibes allowed 🚫
+3. Have fun together! 🧩
+4. I'll remember our chats to serve you better 🤔
+5. You can delete your data anytime 🗑️
         
 That's it! Simple, right? 😄
         """
@@ -1240,11 +1240,11 @@ That's it! Simple, right? 😄
 **Available Commands:**
 {command_list}
         
-**Quick Tips:**
-• Just type a message to chat with me
-• Use inline buttons for navigation
-• I remember our conversations and learn from them
-• Ask me anything, and I'll do my best to help!
+**💡 Quick Tips:**
+• Just type a message to chat with me 😊
+• Use inline buttons for navigation ⌨️
+• I remember our conversations and learn from them 🧠
+• Ask me anything, and I'll do my best to help! 😉
         
 Need more help? Join our community: {SOCIAL_LINKS["📢 Community"]}
         """
@@ -1333,7 +1333,7 @@ Choose an option:
         chat_text = f"""
 💬 **Chat Mode**
         
-Hey {first_name}! I'm ready to chat with you. Just type a message, and I'll respond!
+Hey {first_name}! I'm ready to chat with you. Just type a message, and I'll respond! 🤗
         
 Need ideas? You could:
 • Ask me a question 🗨️
@@ -1391,7 +1391,7 @@ I'll remember our conversation and learn from it.
         
         image_prompt_text = """
 🎨 **Image Generation (Beta) **
-        
+*Note: Feature will be removed. 🚧*     
 Describe the image you'd like me to create:
 • Be specific about what you want to see
 • Include details about style, mood, and elements
@@ -1663,7 +1663,7 @@ Hey {first_name}! What would you like to do today?
         
         upload_text = """
 📁 **File Upload (Beta)**
-        
+*Note: Feature will be removed. 🚧*        
 You can send me any file up to 5MB! I'll keep it safe for you.
         
 Supported file types:
@@ -1696,7 +1696,7 @@ Just send the file as an attachment.
         
         generate_text = """
 🎨 **Image Generation (Beta) **
-        
+ *Note: Feature will be removed. 🚧*       
 Describe the image you'd like me to create:
 • Be specific about what you want to see
 • Include details about style, mood, and elements
