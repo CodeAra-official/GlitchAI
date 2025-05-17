@@ -62,10 +62,10 @@ genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Constants
-BOT_VERSION = "2.0.0"
+BOT_VERSION = "2.0.1"
 BOT_NAME = "GlitchAI"
 COMPANY = "CodeAra"
-DATE_UPDATE = "01-05-2025"
+DATE_UPDATE = "17-05-2025"
 FOUNDER = "Wail Achouri"
 BUILD_ID = "GlitchAI Cyan Edition" 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
@@ -1271,13 +1271,14 @@ Copyright (c) 2025 CodeAra
 
 Designed by {COMPANY} in Harrach
 
-**🧑‍💻 Owner:** {FOUNDER}
-**🔢 Version:** {BOT_VERSION}
-**📅 Build Date:** 19-04-2025
-**⬆️ Update Date:** {DATE_UPDATE}
-**🔤 Build ID:** {BUILD_ID}
+**• 🧑‍💻 Owner:** {FOUNDER}
+**• 🔢 Version:** {BOT_VERSION}
+**• 📅 Build Date:** 19-04-2025
+**• ⬆️ Update Date:** {DATE_UPDATE}
+**• 🔤 Build ID:** {BUILD_ID}
 
 **✨ What's New**
+• Reactivate bot 🔁
 • Advanced AI chat with Gemini 2.0 🤖
 • Conversation memory & learning 🧠
 • Numbered message tracking 🔎
