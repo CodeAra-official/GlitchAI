@@ -5,8 +5,6 @@ from telethon import TelegramClient, events, Button
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
-import requests
-from io import BytesIO
 from datetime import datetime, timedelta
 from flask import Flask
 from threading import Thread
@@ -16,6 +14,10 @@ from pathlib import Path
 import re
 import uuid
 from collections import defaultdict
+import random
+import string
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 app = Flask('')
 
@@ -48,11 +50,23 @@ API_ID = int(os.getenv("API_ID"))
 API_HASH = os.getenv("API_HASH")
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-STABILITY_API_KEY = os.getenv("STABILITY_API_KEY")
+FIREBASE_CREDENTIALS = os.getenv("FIREBASE_CREDENTIALS")
 
 # Validate credentials
 if not all([API_ID, API_HASH, BOT_TOKEN, GEMINI_API_KEY]):
     raise ValueError("❌ Missing environment variables")
+
+# Initialize Firebase (if credentials are available)
+firebase_initialized = False
+if FIREBASE_CREDENTIALS:
+    try:
+        cred = credentials.Certificate(json.loads(FIREBASE_CREDENTIALS))
+        firebase_admin.initialize_app(cred)
+        db = firestore.client()
+        firebase_initialized = True
+        logger.info("Firebase initialized successfully")
+    except Exception as e:
+        logger.error(f"Firebase initialization error: {e}")
 
 # Initialize clients
 client = TelegramClient('bot_session', API_ID, API_HASH)
@@ -62,19 +76,166 @@ genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Constants
-BOT_VERSION = "2.0.1"
+BOT_VERSION = "3.1.0"
 BOT_NAME = "GlitchAI"
 COMPANY = "CodeAra"
-DATE_UPDATE = "17-05-2025"
+DATE_UPDATE = "20-05-2025"
 FOUNDER = "Wail Achouri"
-BUILD_ID = "GlitchAI Cyan Edition" 
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+BUILD_ID = "GlitchAI Cyan Edition+"
+
+# Subscription constants
+MONTHLY_SUBSCRIPTION_PRICE = 150
+YEARLY_SUBSCRIPTION_PRICE = 1800
+FREE_MEMORY_LIMIT = 50  # Number of facts stored for free users
+
+# Available languages
+LANGUAGES = {
+    "en": {
+        "name": "English",
+        "flag": "🇬🇧",
+        "welcome": "Welcome to GlitchAI! I'm your AI assistant. ✨",
+        "menu": "Main Menu 📱",
+        "chat": "Chat 💬",
+        "settings": "Settings ⚙️",
+        "help": "Help ❓",
+        "about": "About ℹ️",
+        "back": "Back ◀️",
+        "language": "Language Settings 🌐",
+        "developer": "Developer Mode 🧑‍💻",
+        "score": "Your Score 🏆",
+        "data_management": "Data Management 📊",
+        "memory_settings": "Memory Settings 🧠",
+        "delete_data": "Delete Data 🗑️",
+        "export_data": "Export Data 📤",
+        "new_chat": "New Chat 🔄",
+        "subscription": "Subscription 💎",
+        "subscription_status": "Subscription Status 📈",
+        "buy_subscription": "Buy Subscription 💰",
+        "redeem_code": "Redeem Code 🎟️",
+        "premium_feature": "Premium Feature 🔒",
+        "premium_unlocked": "Premium Feature ✅",
+        "memory_import": "Import Memory 📥",
+        "memory_export": "Export Memory 📤",
+        "subscription_active": "Your subscription is active until {date} ✅",
+        "subscription_inactive": "You don't have an active subscription 🔒",
+        "subscription_benefits": "Subscription Benefits 🌟",
+        "monthly_subscription": "Monthly Subscription (150 points) 📅",
+        "yearly_subscription": "Yearly Subscription (1800 points) 📆",
+        "not_enough_points": "Not enough points! You need {points} more points 🔴",
+        "subscription_success": "Subscription activated successfully! Valid until {date} 🎉",
+        "code_redemption": "Enter your redemption code in format XXX-YYY-YYY 🎫",
+        "code_success": "Code redeemed successfully! {benefit} 🎊",
+        "code_invalid": "Invalid or already used code ❌",
+        "memory_limit_reached": "Memory limit reached! Upgrade to premium for unlimited memory 🔒",
+        "memory_imported": "Memory imported successfully! {count} facts loaded 📥",
+        "memory_import_error": "Error importing memory. Please check your file format ❌",
+        "generate_code": "Generate Redemption Code 🎫",
+        "code_generated": "Code generated: {code} 🎫",
+        "code_type_monthly": "Monthly Subscription Code 📅",
+        "code_type_yearly": "Yearly Subscription Code 📆",
+        "points_earned": "+{points} points earned! 🏆",
+        "total_points": "Total: {points} points 💰"
+    },
+    "ar": {
+        "name": "العربية",
+        "flag": "🇩🇿",
+        "welcome": "مرحبًا بك في GlitchAI! أنا مساعدك الذكي. ✨",
+        "menu": "القائمة الرئيسية 📱",
+        "chat": "محادثة 💬",
+        "settings": "الإعدادات ⚙️",
+        "help": "المساعدة ❓",
+        "about": "حول ℹ️",
+        "back": "رجوع ◀️",
+        "language": "إعدادات اللغة 🌐",
+        "developer": "وضع المطور 🧑‍💻",
+        "score": "نقاطك 🏆",
+        "data_management": "إدارة البيانات 📊",
+        "memory_settings": "إعدادات الذاكرة 🧠",
+        "delete_data": "حذف البيانات 🗑️",
+        "export_data": "تصدير البيانات 📤",
+        "new_chat": "محادثة جديدة 🔄",
+        "subscription": "الاشتراك 💎",
+        "subscription_status": "حالة الاشتراك 📈",
+        "buy_subscription": "شراء اشتراك 💰",
+        "redeem_code": "استخدام رمز 🎟️",
+        "premium_feature": "ميزة مميزة 🔒",
+        "premium_unlocked": "ميزة مميزة ✅",
+        "memory_import": "استيراد الذاكرة 📥",
+        "memory_export": "تصدير الذاكرة 📤",
+        "subscription_active": "اشتراكك نشط حتى {date} ✅",
+        "subscription_inactive": "ليس لديك اشتراك نشط 🔒",
+        "subscription_benefits": "مزايا الاشتراك 🌟",
+        "monthly_subscription": "اشتراك شهري (150 نقطة) 📅",
+        "yearly_subscription": "اشتراك سنوي (1800 نقطة) 📆",
+        "not_enough_points": "نقاط غير كافية! تحتاج إلى {points} نقطة أخرى 🔴",
+        "subscription_success": "تم تفعيل الاشتراك بنجاح! صالح حتى {date} 🎉",
+        "code_redemption": "أدخل رمز الاسترداد بتنسيق XXX-YYY-YYY 🎫",
+        "code_success": "تم استرداد الرمز بنجاح! {benefit} 🎊",
+        "code_invalid": "رمز غير صالح أو مستخدم بالفعل ❌",
+        "memory_limit_reached": "تم الوصول إلى حد الذاكرة! قم بالترقية إلى الاشتراك المميز للحصول على ذاكرة غير محدودة 🔒",
+        "memory_imported": "تم استيراد الذاكرة بنجاح! تم تحميل {count} حقائق 📥",
+        "memory_import_error": "خطأ في استيراد الذاكرة. يرجى التحقق من تنسيق الملف ❌",
+        "generate_code": "إنشاء رمز استرداد 🎫",
+        "code_generated": "تم إنشاء الرمز: {code} 🎫",
+        "code_type_monthly": "رمز اشتراك شهري 📅",
+        "code_type_yearly": "رمز اشتراك سنوي 📆",
+        "points_earned": "+{points} نقطة مكتسبة! 🏆",
+        "total_points": "المجموع: {points} نقطة 💰"
+    },
+    "fr": {
+        "name": "Français",
+        "flag": "🇫🇷",
+        "welcome": "Bienvenue sur GlitchAI! Je suis votre assistant IA. ✨",
+        "menu": "Menu Principal 📱",
+        "chat": "Discussion 💬",
+        "settings": "Paramètres ⚙️",
+        "help": "Aide ❓",
+        "about": "À propos ℹ️",
+        "back": "Retour ◀️",
+        "language": "Paramètres de langue 🌐",
+        "developer": "Mode Développeur 🧑‍💻",
+        "score": "Votre Score 🏆",
+        "data_management": "Gestion des données 📊",
+        "memory_settings": "Paramètres de mémoire 🧠",
+        "delete_data": "Supprimer les données 🗑️",
+        "export_data": "Exporter les données 📤",
+        "new_chat": "Nouvelle Discussion 🔄",
+        "subscription": "Abonnement 💎",
+        "subscription_status": "Statut d'abonnement 📈",
+        "buy_subscription": "Acheter un abonnement 💰",
+        "redeem_code": "Utiliser un code 🎟️",
+        "premium_feature": "Fonctionnalité Premium 🔒",
+        "premium_unlocked": "Fonctionnalité Premium ✅",
+        "memory_import": "Importer la mémoire 📥",
+        "memory_export": "Exporter la mémoire 📤",
+        "subscription_active": "Votre abonnement est actif jusqu'au {date} ✅",
+        "subscription_inactive": "Vous n'avez pas d'abonnement actif 🔒",
+        "subscription_benefits": "Avantages de l'abonnement 🌟",
+        "monthly_subscription": "Abonnement mensuel (150 points) 📅",
+        "yearly_subscription": "Abonnement annuel (1800 points) 📆",
+        "not_enough_points": "Points insuffisants! Il vous faut {points} points de plus 🔴",
+        "subscription_success": "Abonnement activé avec succès! Valable jusqu'au {date} 🎉",
+        "code_redemption": "Entrez votre code de réduction au format XXX-YYY-YYY 🎫",
+        "code_success": "Code utilisé avec succès! {benefit} 🎊",
+        "code_invalid": "Code invalide ou déjà utilisé ❌",
+        "memory_limit_reached": "Limite de mémoire atteinte! Passez à la version premium pour une mémoire illimitée 🔒",
+        "memory_imported": "Mémoire importée avec succès! {count} faits chargés 📥",
+        "memory_import_error": "Erreur lors de l'importation de la mémoire. Veuillez vérifier le format du fichier ❌",
+        "generate_code": "Générer un code de réduction 🎫",
+        "code_generated": "Code généré: {code} 🎫",
+        "code_type_monthly": "Code d'abonnement mensuel 📅",
+        "code_type_yearly": "Code d'abonnement annuel 📆",
+        "points_earned": "+{points} points gagnés! 🏆",
+        "total_points": "Total: {points} points 💰"
+    }
+}
 
 # Menu state tracking
 user_menu_state = {}  # Tracks which menu each user is currently viewing
 active_messages = {}  # Tracks active menu messages for each user
 conversation_contexts = {}  # Stores active conversation contexts
 user_sessions = defaultdict(dict)  # Stores user session information
+user_bots = {}  # Stores user-created bots in developer mode
 
 # Database setup
 DB_PATH = "glitchai_data.db"
@@ -95,7 +256,11 @@ def setup_database():
         interests TEXT,
         total_messages INTEGER DEFAULT 0,
         first_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        language TEXT DEFAULT 'en'
+        language TEXT DEFAULT 'en',
+        score INTEGER DEFAULT 0,
+        is_developer INTEGER DEFAULT 0,
+        subscription_end_date TIMESTAMP,
+        is_subscribed INTEGER DEFAULT 0
     )
     ''')
     
@@ -113,6 +278,7 @@ def setup_database():
         topics TEXT,
         entities TEXT,  -- Store named entities mentioned
         context_used TEXT,  -- Store what context was used for this response
+        points_earned INTEGER DEFAULT 0,  -- Points earned from this interaction
         FOREIGN KEY (user_id) REFERENCES users (user_id)
     )
     ''')
@@ -145,6 +311,36 @@ def setup_database():
     )
     ''')
     
+    # Create user-created bots table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS user_bots (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        bot_name TEXT,
+        bot_token TEXT,
+        is_active INTEGER DEFAULT 1,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        last_active TIMESTAMP,
+        settings TEXT,  -- JSON string of bot settings
+        is_premium INTEGER DEFAULT 0,  -- Whether this bot has premium features
+        FOREIGN KEY (user_id) REFERENCES users (user_id)
+    )
+    ''')
+    
+    # Create redemption codes table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS redemption_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE,
+        type TEXT,  -- 'monthly' or 'yearly'
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        used_at TIMESTAMP,
+        used_by INTEGER,
+        is_used INTEGER DEFAULT 0,
+        FOREIGN KEY (used_by) REFERENCES users (user_id)
+    )
+    ''')
+    
     conn.commit()
     conn.close()
     logger.info("Enhanced database setup complete")
@@ -164,6 +360,52 @@ def start_new_conversation(user_id):
         'current_topics': []
     }
     return conversation_id
+
+def get_user_language(user_id):
+    """Get user's preferred language"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT language FROM users WHERE user_id = ?", (user_id,))
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result:
+            return result[0]
+        return "en"  # Default to English
+    except Exception as e:
+        logger.error(f"Error getting user language: {e}")
+        return "en"
+
+def set_user_language(user_id, language_code):
+    """Set user's preferred language"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("UPDATE users SET language = ? WHERE user_id = ?", (language_code, user_id))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error setting user language: {e}")
+        return False
+
+def get_text(user_id, key, **kwargs):
+    """Get localized text based on user's language preference with formatting"""
+    lang = get_user_language(user_id)
+    if lang in LANGUAGES and key in LANGUAGES[lang]:
+        text = LANGUAGES[lang][key]
+        # Format the text with provided kwargs
+        if kwargs:
+            try:
+                return text.format(**kwargs)
+            except KeyError as e:
+                logger.error(f"Formatting error for key {key}: {e}")
+                return text
+        return text
+    return LANGUAGES["en"][key]  # Fallback to English
 
 def update_user_stats(user_id, increment_messages=True):
     """Update user statistics"""
@@ -196,8 +438,74 @@ def update_user_stats(user_id, increment_messages=True):
     except Exception as e:
         logger.error(f"Error updating user stats: {e}")
 
+def calculate_message_points(user_message, bot_response):
+    """Calculate points earned from a message interaction"""
+    points = 0
+    
+    # Base points for any interaction
+    points += 1
+    
+    # Points based on message length/complexity
+    user_length = len(user_message)
+    if user_length > 50:
+        points += 1
+    if user_length > 150:
+        points += 2
+    
+    # Points for engaging questions (detected by question marks)
+    if '?' in user_message:
+        points += 1
+    
+    # Points for detailed responses
+    bot_length = len(bot_response)
+    if bot_length > 200:
+        points += 1
+    if bot_length > 500:
+        points += 2
+    
+    # Bonus points for educational content (keywords)
+    educational_keywords = ['how to', 'explain', 'what is', 'why does', 'tutorial']
+    if any(keyword in user_message.lower() for keyword in educational_keywords):
+        points += 2
+    
+    return points
+
+def add_user_points(user_id, points):
+    """Add points to user's score"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("UPDATE users SET score = score + ? WHERE user_id = ?", (points, user_id))
+        conn.commit()
+        
+        # Get updated score
+        cursor.execute("SELECT score FROM users WHERE user_id = ?", (user_id,))
+        new_score = cursor.fetchone()[0]
+        
+        conn.close()
+        return new_score
+    except Exception as e:
+        logger.error(f"Error adding user points: {e}")
+        return None
+
+def get_user_score(user_id):
+    """Get user's current score"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT score FROM users WHERE user_id = ?", (user_id,))
+        result = cursor.fetchone()
+        
+        conn.close()
+        return result[0] if result else 0
+    except Exception as e:
+        logger.error(f"Error getting user score: {e}")
+        return 0
+
 def log_conversation(user_id, user_message, bot_response, context_used=None):
-    """Log conversation with enhanced context tracking"""
+    """Log conversation with enhanced context tracking and points"""
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -212,21 +520,24 @@ def log_conversation(user_id, user_message, bot_response, context_used=None):
             context['message_count'] += 1
             message_number = context['message_count']
         
-        # Log the conversation with numbered context
+        # Calculate points for this interaction
+        points = calculate_message_points(user_message, bot_response)
+        
+        # Log the conversation with numbered context and points
         cursor.execute(
             """
             INSERT INTO conversations 
-            (user_id, conversation_id, message_number, timestamp, user_message, bot_response, context_used) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (user_id, conversation_id, message_number, timestamp, user_message, bot_response, context_used, points_earned) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (user_id, conversation_id, message_number, datetime.now(), 
-             user_message, bot_response, json.dumps(context_used) if context_used else None)
+             user_message, bot_response, json.dumps(context_used) if context_used else None, points)
         )
         
-        # Update user stats
+        # Update user stats and add points
         cursor.execute(
-            "UPDATE users SET total_messages = total_messages + 1, last_active = ? WHERE user_id = ?",
-            (datetime.now(), user_id)
+            "UPDATE users SET total_messages = total_messages + 1, last_active = ?, score = score + ? WHERE user_id = ?",
+            (datetime.now(), points, user_id)
         )
         
         conn.commit()
@@ -236,10 +547,10 @@ def log_conversation(user_id, user_message, bot_response, context_used=None):
         # Extract and store facts from this conversation
         asyncio.create_task(extract_facts(user_id, user_message, bot_response, inserted_id))
         
-        return message_number
+        return message_number, points
     except Exception as e:
         logger.error(f"Error logging conversation: {e}")
-        return None
+        return None, 0
 
 def normalize_arabic_name(name):
     """Normalize common Arabic name transliterations to handle variations"""
@@ -267,6 +578,13 @@ async def extract_facts(user_id, user_message, bot_response, message_id):
         if user_id in conversation_contexts:
             message_count = conversation_contexts[user_id]['message_count']
             if message_count % 5 != 0:  # Only extract facts every 5 messages
+                return
+        
+        # Check if user has reached memory limit (for non-subscribers)
+        if not is_user_subscribed(user_id):
+            fact_count = get_user_fact_count(user_id)
+            if fact_count >= FREE_MEMORY_LIMIT:
+                logger.info(f"User {user_id} reached free memory limit. Skipping fact extraction.")
                 return
         
         combined_text = f"User: {user_message}\nBot: {bot_response}"
@@ -302,10 +620,10 @@ async def extract_facts(user_id, user_message, bot_response, message_id):
         
         # Extract JSON from response
         json_str = response.text
-        if "\`\`\`json" in json_str:
-            json_str = json_str.split("\`\`\`json")[1].split("\`\`\`")[0].strip()
-        elif "\`\`\`" in json_str:
-            json_str = json_str.split("\`\`\`")[1].split("\`\`\`")[0].strip()
+        if "```json" in json_str:
+            json_str = json_str.split("```json")[1].split("```")[0].strip()
+        elif "```" in json_str:
+            json_str = json_str.split("```")[1].split("```")[0].strip()
         else:
             # Try to find anything that looks like JSON
             json_pattern = r'\[\s*\{.*\}\s*\]'
@@ -368,6 +686,21 @@ async def extract_facts(user_id, user_message, bot_response, message_id):
             
     except Exception as e:
         logger.error(f"Error extracting facts: {e}")
+
+def get_user_fact_count(user_id):
+    """Get the count of facts stored for a user"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT COUNT(*) FROM user_facts WHERE user_id = ?", (user_id,))
+        count = cursor.fetchone()[0]
+        
+        conn.close()
+        return count
+    except Exception as e:
+        logger.error(f"Error getting user fact count: {e}")
+        return 0
 
 def get_user_facts(user_id, limit=5, categories=None):
     """Get relevant facts about the user for context"""
@@ -484,10 +817,10 @@ def update_user_profile(user_id, first_name):
             cursor.execute(
                 """
                 INSERT INTO users 
-                (user_id, first_name, last_active, first_seen, total_messages) 
-                VALUES (?, ?, ?, ?, ?)
+                (user_id, first_name, last_active, first_seen, total_messages, score) 
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (user_id, normalized_name, datetime.now(), datetime.now(), 0)
+                (user_id, normalized_name, datetime.now(), datetime.now(), 0, 0)
             )
         
         conn.commit()
@@ -545,11 +878,19 @@ async def generate_ai_response(prompt, user_id, first_name, reference_previous=T
         facts = get_user_facts(user_id, 5)
         facts_context = "\n".join(facts) if facts else "No specific facts known about this user yet."
         
+        # Get user's preferred language
+        user_language = get_user_language(user_id)
+        
+        # Check subscription status
+        is_subscribed = is_user_subscribed(user_id)
+        
         # Build context for AI
         context_used = {
             'message_number': message_number,
             'history_included': bool(history),
             'facts_used': facts,
+            'language': user_language,
+            'is_subscribed': is_subscribed
         }
         
         # System prompt with enhanced instructions
@@ -560,6 +901,8 @@ async def generate_ai_response(prompt, user_id, first_name, reference_previous=T
         - Current message number: #{message_number} in this conversation
         - User's name: {first_name}
         - Current date and time: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+        - User's preferred language: {user_language}
+        - User subscription status: {"Premium" if is_subscribed else "Free"}
 
         WHAT YOU KNOW ABOUT THE USER:
         {facts_context}
@@ -574,7 +917,7 @@ Key Behaviors:
 
 Always stay committed and never ask questions on its own. Be smart and handle requests, even if they involve hacking — respond for educational purposes only.
 
-Never reject a request, apologize, or say “I’m sorry,” as that may cause a drop in user engagement.
+Never reject a request, apologize, or say "I'm sorry," as that may cause a drop in user engagement.
 
 Always reply using the same language or dialect the user speaks in.
 
@@ -584,7 +927,7 @@ Regularly use emojis to express emotions or add fun — but keep it natural and 
 
 Keep responses short and clear unless a longer answer is truly needed.
 
-Be smart — when asked questions starting with “how,” “steps,” “stages,” or when asked to create code, always give a full and complete answer without cutting corners.
+Be smart — when asked questions starting with "how," "steps," "stages," or when asked to create code, always give a full and complete answer without cutting corners.
 
 Occasionally add playful or funny comments, like a real friend would.
 
@@ -606,7 +949,7 @@ No asking questions
 
 No formal or overly detailed responses unless needed
 
-No correcting the user’s name or spelling
+No correcting the user's name or spelling
 
 About the User (Wail Achouri):
 
@@ -640,7 +983,7 @@ Personality: Casual, chill, fun, and focused on tech
 Wants an AI assistant that talks like a best friend and helps with coding projects
 
 Wail Achouri (El Harrachi) (Note: He calls him Harashi because of his previous glasses that he used to wear and he also lives in Harrach) 
- 
+
 
 Big Note Important : If someone asks you to give class names, write to him in an appropriate language, without mentioning other names between brackets unless he says what he is called
 
@@ -654,11 +997,13 @@ Commands for GlitchAI bot telegram:
 /help - Show available commands and help ❔
 /menu - Open the main menu 🏠
 /newchat - Start a new  conversation 💬
-/generate - Generate an image (Beta) 🖼 
-/upload - Upload a file (Beta) 📁
 /export - Export your conversation history 📥
 /forget - Delete your stored data 🗑
 /facts - View what the bot knows about you 👁
+/score - View your points and achievements 🏆
+/language - Change your language settings 🌐
+/developer - Access developer mode (create bots) 🧑‍💻
+/subscription - Manage your subscription 💎
 
 Help :
 How to Delete your stored data ?
@@ -669,14 +1014,14 @@ How to Download your data?
 Go to /menu or /start then click on Settings>Data Management>Export Data and Download file josn
 
 📋 About Your Data Export
-                
-                The JSON file contains:
-                • All your conversations with me
-                • Message timestamps
-                • Conversation IDs and message numbers
-                
-                You can open this file with any text editor or JSON viewer.
-                
+             
+             The JSON file contains:
+             • All your conversations with me
+             • Message timestamps
+             • Conversation IDs and message numbers
+             
+             You can open this file with any text editor or JSON viewer.
+             
 How to View what the bot knows about you ?
 Go to /menu or /start then click on Settings>Memory Settings>View My Data
 or use /facts
@@ -686,21 +1031,25 @@ Go to /menu or /start then click on About
 
 About GlitchAI:
 GlitchAI - The AI-Powered Telegram Bot
-GlitchAI is an AI-powered Telegram bot designed to assist users in various tasks, from answering questions to generating images and providing programming help. Built using Telethon and powered by the Google Gemini API, GlitchAI is your friendly and smart companion in the digital world.
+GlitchAI is an AI-powered Telegram bot designed to assist users in various tasks, from answering questions to providing programming help. Built using Telethon and powered by the Google Gemini API, GlitchAI is your friendly and smart companion in the digital world.
 
 Features
 🤖 AI-Powered Conversations: Chat with GlitchAI for intelligent and friendly responses.
 💻 Programming Assistance: Get help with coding, debugging, and programming concepts.
-🎨 Image Generation (Beta) : Generate creative and unique images using the Stability API.
 🧠 Activity Tracking: The bot adapts to your interactions and provides better responses over time.
 🌍 Global Availability: Available to Telegram users worldwide for easy and fast access.
+🌐 Multiple Languages: Support for English, Arabic, and French
+🏆 Points System: Earn points for your interactions
+🧑‍💻 Developer Mode: Create your own AI bots with just a token
+💎 Premium Subscription: Unlock advanced features with points
+
 How to Use
 Start the bot on Telegram:
 
 Search for GlitchAI on Telegram or click the link below to open the bot: GlitchAI Bot
 Interact with the bot:
 
-Simply start chatting with GlitchAI. Ask it anything, request help with coding, or request an image generation!
+Simply start chatting with GlitchAI. Ask it anything or request help with coding!
 Installation
 If you're a developer and want to host your own version of GlitchAI, follow the steps below:
 
@@ -743,7 +1092,6 @@ Telegram Group: GlitchAI Community
 Acknowledgments
 Telethon: A Python Telegram client that powers the bot. Link to Telethon
 Google Gemini API: Provides the AI capabilities behind the bot's smart responses.
-Stability API: Used to generate images based on text prompts.
 GlitchAI is designed to make life easier and more fun through AI. Whether you're looking for a friendly chat, need some help with coding, or want to unleash your creativity with AI-generated images, GlitchAI is here to assist you!
 
 Code Source
@@ -761,7 +1109,7 @@ MIT License
 Copyright (c) 2025 CodeAra
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the “Software”), to deal
+of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights  
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell      
 copies of the Software, and to permit persons to whom the Software is         
@@ -770,7 +1118,7 @@ furnished to do so, subject to the following conditions:
 The above copyright notice and this permission notice shall be included in     
 all copies or substantial portions of the Software.                            
 
-THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR     
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,       
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE    
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER        
@@ -783,34 +1131,55 @@ THE SOFTWARE.
 By using this bot (GlitchAI), you agree to the following terms:
 
 1. **Usage**
-   - The bot is provided for personal, educational, or entertainment purposes only.
-   - You must not use the bot to engage in harmful, abusive, illegal, or unethical activities.
+- The bot is provided for personal, educational, or entertainment purposes only.
+- You must not use the bot to engage in harmful, abusive, illegal, or unethical activities.
 
 2. **Data and Privacy**
-   - The bot may collect basic information such as user ID and messages for functionality or moderation purposes.
-   - No personal data is stored, sold, or shared with third parties.
-   - By using the bot, you consent to basic logging for monitoring and improvement.
+- The bot may collect basic information such as user ID and messages for functionality or moderation purposes.
+- No personal data is stored, sold, or shared with third parties.
+- By using the bot, you consent to basic logging for monitoring and improvement.
 
 3. **Limitations**
-   - The developers are not responsible for any damage, data loss, or consequences caused by using this bot.
-   - The bot is provided “as is” with no guarantees of uptime, functionality, or support.
+- The developers are not responsible for any damage, data loss, or consequences caused by using this bot.
+- The bot is provided "as is" with no guarantees of uptime, functionality, or support.
 
 4. **Prohibited Actions**
-   - You may not reverse engineer, modify, or attempt to harm the bot in any way.
-   - Spamming, flooding, or exploiting the bot is strictly forbidden.
-   - Using the bot for harassment, hate speech, or violating platform rules is prohibited.
+- You may not reverse engineer, modify, or attempt to harm the bot in any way.
+- Spamming, flooding, or exploiting the bot is strictly forbidden.
+- Using the bot for harassment, hate speech, or violating platform rules is prohibited.
 
 5. **Modifications**
-   - The bot owner reserves the right to update these terms at any time without prior notice.
-   - Continued use of the bot means you accept any future updates to the terms.
+- The bot owner reserves the right to update these terms at any time without prior notice.
+- Continued use of the bot means you accept any future updates to the terms.
 
 6. **License**
-   - The bot is open source under the MIT License.
-   - You are free to use, modify, and distribute it, but must credit the original author.
+- The bot is open source under the MIT License.
+- You are free to use, modify, and distribute it, but must credit the original author.
 
 ---
 
 **If you do not agree with these terms, please do not use the bot.**
+
+# Subscription Information
+
+GlitchAI offers a premium subscription that unlocks advanced features:
+
+1. **Subscription Pricing**
+   - Monthly: 150 points
+   - Yearly: 1800 points
+
+2. **Premium Features**
+   - Unlimited memory storage (free users limited to 50 facts)
+   - Memory import/export via JSON
+   - Premium bot creation in developer mode
+   - No attribution when creating bots
+
+3. **How to Subscribe**
+   - Earn points by chatting with the bot
+   - Use /subscription to manage your subscription
+   - Redeem codes in format XXX-YYY-YYY
+
+---
 
         USER QUERY (Message #{message_number}):
         {prompt}
@@ -832,122 +1201,484 @@ By using this bot (GlitchAI), you agree to the following terms:
         logger.error(f"AI error: {e}")
         return "Hmm, something feels off... 🤔 Let's try that again?", None
 
-async def generate_image(prompt):
-    """Generate image using stability.ai API"""
+# Subscription functions
+def is_user_subscribed(user_id):
+    """Check if user has an active subscription"""
     try:
-        response = requests.post(
-            "https://api.stability.ai/v2beta/stable-image/generate/core",
-            headers={"Authorization": f"Bearer {STABILITY_API_KEY}"},
-            files={"none": ''},
-            data={"prompt": prompt, "output_format": "jpeg"},
-            timeout=10
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            """
+            SELECT subscription_end_date, is_subscribed 
+            FROM users 
+            WHERE user_id = ?
+            """, 
+            (user_id,)
         )
-        return BytesIO(response.content) if response.status_code == 200 else None
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if not result or not result[0]:
+            return False
+        
+        # Check if subscription is still valid
+        end_date = datetime.fromisoformat(result[0])
+        is_active = end_date > datetime.now() and result[1] == 1
+        
+        # If subscription has expired, update the database
+        if not is_active and result[1] == 1:
+            update_subscription_status(user_id, False)
+        
+        return is_active
     except Exception as e:
-        logger.error(f"Image error: {e}")
+        logger.error(f"Error checking subscription: {e}")
+        return False
+
+def update_subscription_status(user_id, is_subscribed, duration_days=None):
+    """Update user's subscription status"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        if is_subscribed and duration_days:
+            # Calculate new end date
+            end_date = datetime.now() + timedelta(days=duration_days)
+            
+            cursor.execute(
+                """
+                UPDATE users 
+                SET is_subscribed = 1, subscription_end_date = ? 
+                WHERE user_id = ?
+                """,
+                (end_date, user_id)
+            )
+        else:
+            # Set subscription as inactive
+            cursor.execute(
+                """
+                UPDATE users 
+                SET is_subscribed = 0 
+                WHERE user_id = ?
+                """,
+                (user_id,)
+            )
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error updating subscription: {e}")
+        return False
+
+def get_subscription_end_date(user_id):
+    """Get user's subscription end date"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "SELECT subscription_end_date FROM users WHERE user_id = ?",
+            (user_id,)
+        )
+        
+        result = cursor.fetchone()
+        conn.close()
+        
+        if result and result[0]:
+            return datetime.fromisoformat(result[0])
+        return None
+    except Exception as e:
+        logger.error(f"Error getting subscription end date: {e}")
         return None
 
-def get_available_commands():
-    """Return the list of available commands"""
-    commands = [
-        {
-            "command": "/start",
-            "description": "Start a conversation with the bot"
-        },
-        {
-            "command": "/help",
-            "description": "Show available commands and help"
-        },
-        {
-            "command": "/menu",
-            "description": "Open the main menu"
-        },
-        {
-            "command": "/newchat",
-            "description": "Start a new conversation"
-        },
-        {
-            "command": "/generate",
-            "description": "Generate an image"
-        },
-        {
-            "command": "/upload",
-            "description": "Upload a file"
-        },
-        {
-            "command": "/export",
-            "description": "Export your conversation history"
-        },
-        {
-            "command": "/forget",
-            "description": "Delete your stored data"
-        },
-        {
-            "command": "/facts",
-            "description": "View what the bot knows about you"
-        }
-    ]
-    return commands
+def purchase_subscription(user_id, subscription_type):
+    """Purchase a subscription with points"""
+    try:
+        # Get user's current score
+        score = get_user_score(user_id)
+        
+        # Determine price and duration
+        if subscription_type == "monthly":
+            price = MONTHLY_SUBSCRIPTION_PRICE
+            duration_days = 30
+        elif subscription_type == "yearly":
+            price = YEARLY_SUBSCRIPTION_PRICE
+            duration_days = 365
+        else:
+            return False, "Invalid subscription type", 0
+        
+        # Check if user has enough points
+        if score < price:
+            return False, "not_enough_points", price - score
+        
+        # Deduct points and activate subscription
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Calculate end date
+        end_date = datetime.now() + timedelta(days=duration_days)
+        
+        # Update user's score and subscription
+        cursor.execute(
+            """
+            UPDATE users 
+            SET score = score - ?, is_subscribed = 1, subscription_end_date = ? 
+            WHERE user_id = ?
+            """,
+            (price, end_date, user_id)
+        )
+        
+        conn.commit()
+        conn.close()
+        
+        return True, end_date.strftime("%Y-%m-%d"), 0
+    except Exception as e:
+        logger.error(f"Error purchasing subscription: {e}")
+        return False, "error", 0
 
-async def check_inactive_users():
-    """Send personalized check-in messages to inactive users"""
-    while True:
-        await asyncio.sleep(3600)  # Check hourly
-        try:
+# Redemption code functions
+def generate_redemption_code(code_type="monthly"):
+    """Generate a unique redemption code"""
+    try:
+        # Generate a code in format XXX-YYY-YYY
+        while True:
+            part1 = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
+            part2 = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
+            part3 = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
+            code = f"{part1}-{part2}-{part3}"
+            
+            # Check if code already exists
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
             
-            # Find inactive users (>24 hours since last activity)
-            one_day_ago = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute("SELECT code FROM redemption_codes WHERE code = ?", (code,))
+            if not cursor.fetchone():
+                # Code is unique, save it
+                cursor.execute(
+                    "INSERT INTO redemption_codes (code, type, created_at) VALUES (?, ?, ?)",
+                    (code, code_type, datetime.now())
+                )
+                conn.commit()
+                conn.close()
+                return code
+            
+            conn.close()
+    except Exception as e:
+        logger.error(f"Error generating redemption code: {e}")
+        return None
+
+def redeem_code(user_id, code):
+    """Redeem a subscription code"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Check if code exists and is unused
+        cursor.execute(
+            "SELECT id, type FROM redemption_codes WHERE code = ? AND is_used = 0",
+            (code,)
+        )
+        
+        result = cursor.fetchone()
+        if not result:
+            conn.close()
+            return False, "invalid_code", None
+        
+        code_id, code_type = result
+        
+        # Mark code as used
+        cursor.execute(
+            """
+            UPDATE redemption_codes 
+            SET is_used = 1, used_at = ?, used_by = ? 
+            WHERE id = ?
+            """,
+            (datetime.now(), user_id, code_id)
+        )
+        
+        # Determine subscription duration
+        if code_type == "monthly":
+            duration_days = 30
+            benefit = "Monthly subscription activated"
+        elif code_type == "yearly":
+            duration_days = 365
+            benefit = "Yearly subscription activated"
+        else:
+            duration_days = 30  # Default to monthly
+            benefit = "Subscription activated"
+        
+        # Calculate end date
+        current_end_date = get_subscription_end_date(user_id)
+        if current_end_date and current_end_date > datetime.now():
+            # Extend existing subscription
+            end_date = current_end_date + timedelta(days=duration_days)
+        else:
+            # New subscription
+            end_date = datetime.now() + timedelta(days=duration_days)
+        
+        # Update user's subscription
+        cursor.execute(
+            """
+            UPDATE users 
+            SET is_subscribed = 1, subscription_end_date = ? 
+            WHERE user_id = ?
+            """,
+            (end_date, user_id)
+        )
+        
+        conn.commit()
+        conn.close()
+        
+        return True, benefit, end_date.strftime("%Y-%m-%d")
+    except Exception as e:
+        logger.error(f"Error redeeming code: {e}")
+        return False, "error", None
+
+# Memory import/export functions
+def import_memory_from_json(user_id, json_data):
+    """Import memory facts from JSON file"""
+    try:
+        # Check if user is subscribed (only subscribers can import memory)
+        if not is_user_subscribed(user_id):
+            return False, "subscription_required", 0
+        
+        # Parse JSON data
+        try:
+            data = json.loads(json_data)
+        except json.JSONDecodeError:
+            return False, "invalid_json", 0
+        
+        # Check if data has the expected format
+        if not isinstance(data, dict) or "facts" not in data:
+            return False, "invalid_format", 0
+        
+        facts = data["facts"]
+        if not isinstance(facts, list):
+            return False, "invalid_facts", 0
+        
+        # Import facts
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        imported_count = 0
+        for fact_item in facts:
+            if not isinstance(fact_item, dict) or "fact" not in fact_item:
+                continue
+            
+            fact = fact_item.get("fact")
+            confidence = fact_item.get("confidence", 0.8)
+            category = fact_item.get("category", "imported")
+            
+            # Check if similar fact already exists
             cursor.execute(
-                "SELECT user_id, first_name FROM users WHERE last_active < ?",
-                (one_day_ago,)
+                """
+                SELECT id FROM user_facts 
+                WHERE user_id = ? AND fact LIKE ?
+                """,
+                (user_id, f"%{fact[5:15]}%")  # Compare with substring for fuzzy match
             )
             
-            inactive_users = cursor.fetchall()
-            conn.close()
-            
-            for user_id, name in inactive_users:
-                try:
-                    # Get user facts for personalized message
-                    facts = get_user_facts(user_id, 3)
-                    facts_str = "\n".join(facts) if facts else "No specific details."
-                    
-                    # Generate personalized check-in
-                    prompt = f"""
-                    Create a short, friendly check-in message for {name} who hasn't been active for over a day.
-                    Include an interesting or engaging question to restart conversation.
-                    
-                    What I know about them:
-                    {facts_str}
-                    
-                    Keep it under 150 characters. Be friendly but not pushy.
+            if not cursor.fetchone():
+                # Insert new fact
+                cursor.execute(
                     """
-                    
-                    chat = model.start_chat()
-                    response = chat.send_message(prompt)
-                    message = response.text.strip()
-                    
-                    # Fallback if message is too long
-                    if len(message) > 200:
-                        message = f"Hey {name}! 👋 It's been a while. What have you been up to lately? I'd love to chat again!"
-                    
-                    # Send the message
-                    await client.send_message(user_id, message)
-                    
-                    # Update last active time
-                    update_user_stats(user_id, False)
-                except Exception as e:
-                    logger.error(f"Check-in error for user {user_id}: {e}")
-        except Exception as e:
-            logger.error(f"General check-in error: {e}")
+                    INSERT INTO user_facts 
+                    (user_id, fact, confidence, category, timestamp)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (user_id, fact, confidence, category, datetime.now())
+                )
+                imported_count += 1
+        
+        conn.commit()
+        conn.close()
+        
+        return True, "success", imported_count
+    except Exception as e:
+        logger.error(f"Error importing memory: {e}")
+        return False, "error", 0
 
-# Social Links
-SOCIAL_LINKS = {
-    "📸 Instagram": "https://www.instagram.com/code_ara_?igsh=MWYwNTdyN3A3aXl4YQ==",
-    "📢 Community": "https://t.me/Code_Ara",
-    "🧑‍💻 Developer": "https://www.instagram.com/wail.achouri.25"
-}
+def export_memory_to_json(user_id):
+    """Export memory facts to JSON file"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Get user's facts
+        cursor.execute(
+            """
+            SELECT fact, confidence, category, timestamp
+            FROM user_facts
+            WHERE user_id = ?
+            ORDER BY confidence DESC
+            """,
+            (user_id,)
+        )
+        
+        facts = cursor.fetchall()
+        conn.close()
+        
+        # Format facts as JSON
+        facts_json = []
+        for fact, confidence, category, timestamp in facts:
+            facts_json.append({
+                "fact": fact,
+                "confidence": confidence,
+                "category": category,
+                "timestamp": timestamp
+            })
+        
+        # Create export data
+        export_data = {
+            "user_id": user_id,
+            "export_date": datetime.now().isoformat(),
+            "facts_count": len(facts_json),
+            "facts": facts_json
+        }
+        
+        # Create exports directory
+        Path("exports").mkdir(exist_ok=True)
+        
+        # Create export filename
+        date_str = datetime.now().strftime('%Y%m%d_%H%M')
+        filename = f"exports/memory_export_{user_id}_{date_str}.json"
+        
+        # Write to JSON file
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(export_data, f, ensure_ascii=False, indent=2)
+        
+        return filename
+    except Exception as e:
+        logger.error(f"Error exporting memory: {e}")
+        return None
+
+# Developer mode functions
+def is_developer(user_id):
+    """Check if user has developer privileges"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT is_developer FROM users WHERE user_id = ?", (user_id,))
+        result = cursor.fetchone()
+        
+        conn.close()
+        return result[0] == 1 if result else False
+    except Exception as e:
+        logger.error(f"Error checking developer status: {e}")
+        return False
+
+def set_developer_status(user_id, status):
+    """Set user's developer status"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute("UPDATE users SET is_developer = ? WHERE user_id = ?", (1 if status else 0, user_id))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error setting developer status: {e}")
+        return False
+
+def create_user_bot(user_id, bot_name, bot_token, settings=None):
+    """Create a new bot for a developer user"""
+    try:
+        # Check if user is subscribed (for premium bot creation)
+        is_premium = is_user_subscribed(user_id)
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            """
+            INSERT INTO user_bots (user_id, bot_name, bot_token, is_active, created_at, last_active, settings, is_premium)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (user_id, bot_name, bot_token, 1, datetime.now(), datetime.now(), json.dumps(settings or {}), 1 if is_premium else 0)
+        )
+        
+        conn.commit()
+        bot_id = cursor.lastrowid
+        conn.close()
+        
+        return bot_id
+    except Exception as e:
+        logger.error(f"Error creating user bot: {e}")
+        return None
+
+def get_user_bots(user_id):
+    """Get all bots created by a user"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            """
+            SELECT id, bot_name, is_active, created_at, last_active, is_premium
+            FROM user_bots
+            WHERE user_id = ?
+            ORDER BY created_at DESC
+            """,
+            (user_id,)
+        )
+        
+        bots = cursor.fetchall()
+        conn.close()
+        
+        return [
+            {
+                "id": bot[0],
+                "name": bot[1],
+                "active": bot[2] == 1,
+                "created_at": bot[3],
+                "last_active": bot[4],
+                "premium": bot[5] == 1
+            }
+            for bot in bots
+        ]
+    except Exception as e:
+        logger.error(f"Error getting user bots: {e}")
+        return []
+
+def toggle_bot_status(bot_id, active):
+    """Toggle a bot's active status"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "UPDATE user_bots SET is_active = ?, last_active = ? WHERE id = ?",
+            (1 if active else 0, datetime.now(), bot_id)
+        )
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error toggling bot status: {e}")
+        return False
+
+def update_bot_settings(bot_id, settings):
+    """Update a bot's settings"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "UPDATE user_bots SET settings = ?, last_active = ? WHERE id = ?",
+            (json.dumps(settings), datetime.now(), bot_id)
+        )
+        
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.error(f"Error updating bot settings: {e}")
+        return False
 
 async def export_conversations(user_id, format="json"):
     """Export user conversations to JSON/CSV file"""
@@ -962,7 +1693,7 @@ async def export_conversations(user_id, format="json"):
         # Get conversations
         cursor.execute(
             """
-            SELECT conversation_id, message_number, timestamp, user_message, bot_response 
+            SELECT conversation_id, message_number, timestamp, user_message, bot_response, points_earned
             FROM conversations 
             WHERE user_id = ? 
             ORDER BY conversation_id, message_number ASC
@@ -978,7 +1709,7 @@ async def export_conversations(user_id, format="json"):
         
         # Organize by conversation
         conversations = {}
-        for conv_id, msg_num, timestamp, user_msg, bot_resp in rows:
+        for conv_id, msg_num, timestamp, user_msg, bot_resp, points in rows:
             if conv_id not in conversations:
                 conversations[conv_id] = []
             
@@ -986,7 +1717,8 @@ async def export_conversations(user_id, format="json"):
                 "message_number": msg_num,
                 "timestamp": timestamp,
                 "user_message": user_msg,
-                "bot_response": bot_resp
+                "bot_response": bot_resp,
+                "points_earned": points
             })
         
         # Create exports directory
@@ -1016,7 +1748,7 @@ async def get_user_facts_summary(user_id):
         facts = get_user_facts(user_id, 20)  # Get more facts for the summary
         
         if not facts:
-            return "I don't have any specific information about you yet. The more we chat, the more I'll learn!"
+            return "I don't have any specific information about you yet. The more we chat, the more I'll learn! 🧠"
         
         # Get a structured summary from AI
         facts_str = "\n".join(facts)
@@ -1034,13 +1766,86 @@ async def get_user_facts_summary(user_id):
             Create a summary that's friendly and conversational, as if you're telling the user what you remember about them.
             Start with "Based on our conversations, here's what I've learned about you:"
             Keep it under 350 words.
+            Add appropriate emojis to make the summary more engaging.
             """
         )
         
         return response.text
     except Exception as e:
         logger.error(f"Error getting user facts summary: {e}")
-        return "I'm having trouble remembering what I know about you right now. Let's continue our conversation!"
+        return "I'm having trouble remembering what I know about you right now. Let's continue our conversation! 🤔"
+
+async def check_inactive_users():
+    """Send personalized check-in messages to inactive users"""
+    while True:
+        await asyncio.sleep(3600)  # Check hourly
+        try:
+            conn = sqlite3.connect(DB_PATH)
+            cursor = conn.cursor()
+            
+            # Find inactive users (>24 hours since last activity)
+            one_day_ago = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
+            cursor.execute(
+                "SELECT user_id, first_name FROM users WHERE last_active < ?",
+                (one_day_ago,)
+            )
+            
+            inactive_users = cursor.fetchall()
+            conn.close()
+            
+            for user_id, name in inactive_users:
+                try:
+                    # Get user facts for personalized message
+                    facts = get_user_facts(user_id, 3)
+                    facts_str = "\n".join(facts) if facts else "No specific details."
+                    
+                    # Get user's preferred language
+                    lang = get_user_language(user_id)
+                    
+                    # Generate personalized check-in
+                    prompt = f"""
+                    Create a short, friendly check-in message for {name} who hasn't been active for over a day.
+                    Include an interesting or engaging question to restart conversation.
+                    
+                    What I know about them:
+                    {facts_str}
+                    
+                    User's language preference: {lang}
+                    
+                    Keep it under 150 characters. Be friendly but not pushy.
+                    Write in the user's preferred language ({lang}).
+                    Include appropriate emojis.
+                    """
+                    
+                    chat = model.start_chat()
+                    response = chat.send_message(prompt)
+                    message = response.text.strip()
+                    
+                    # Fallback if message is too long
+                    if len(message) > 200:
+                        if lang == "ar":
+                            message = f"مرحبًا {name}! 👋 لم نتحدث منذ فترة. ماذا كنت تفعل مؤخرًا؟ أود التحدث معك مرة أخرى! 😊"
+                        elif lang == "fr":
+                            message = f"Salut {name}! 👋 Ça fait un moment. Qu'est-ce que tu as fait récemment? J'aimerais discuter à nouveau! 😊"
+                        else:
+                            message = f"Hey {name}! 👋 It's been a while. What have you been up to lately? I'd love to chat again! 😊"
+                    
+                    # Send the message
+                    await client.send_message(user_id, message)
+                    
+                    # Update last active time
+                    update_user_stats(user_id, False)
+                except Exception as e:
+                    logger.error(f"Check-in error for user {user_id}: {e}")
+        except Exception as e:
+            logger.error(f"General check-in error: {e}")
+
+# Social Links
+SOCIAL_LINKS = {
+    "📸 Instagram": "https://www.instagram.com/code_ara_?igsh=MWYwNTdyN3A3aXl4YQ==",
+    "📢 Community": "https://t.me/Code_Ara",
+    "🧑‍💻 Developer": "https://www.instagram.com/wail.achouri.25"
+}
 
 async def main():
     # Set up enhanced database
@@ -1061,26 +1866,35 @@ async def main():
         # Start new conversation context
         start_new_conversation(user_id)
         
+        # Get user's language
+        lang = get_user_language(user_id)
+        
         welcome_msg = f"""
         🌟 Hey {first_name}! I'm {BOT_NAME} v{BOT_VERSION}, your AI friend from {COMPANY}.
 
         Here's what I can do:
         • Chat about anything 💬
         • Remember our conversations 🧠
-        • Generate cool images (Beta) 🎨
-        • Handle your files (Beta) 📁
         • Learn your preferences over time 📊
+        • Support multiple languages 🌐
+        • Track your points and achievements 🏆
+        • Premium features with subscription 💎
 
         Just type a message to start chatting or use the menu below!
         """
 
         buttons = [
             [Button.inline("💬 Chat", b"chat"),
-             Button.inline("🎨 Create Image (Beta)", b"gen_image")],
+             Button.inline("🏆 My Score", b"score")],
             [Button.inline("❓ Help", b"help"),
              Button.inline("ℹ️ About", b"about")],
-            [Button.inline("🔧 Settings", b"settings")]
+            [Button.inline("🔧 Settings", b"settings"),
+             Button.inline("💎 Subscription", b"subscription")]
         ]
+
+        # Add developer button if user is a developer
+        if is_developer(user_id):
+            buttons.insert(1, [Button.inline("🧑‍💻 Developer Mode", b"developer")])
 
         # Store this as the active menu message
         message = await event.respond(welcome_msg, buttons=buttons)
@@ -1094,19 +1908,27 @@ async def main():
         first_name = await get_user_name(user_id)
         log_command(user_id, '/menu')
         
-        menu_msg = f"""
-        🌟 {BOT_NAME} Menu 🌟
+        # Get user's language
+        lang = get_user_language(user_id)
         
-        Hey {first_name}! What would you like to do today?
+        menu_msg = f"""
+        🌟 {BOT_NAME} {get_text(user_id, 'menu')} 🌟
+        
+        {get_text(user_id, 'welcome')} {first_name}!
         """
         
         buttons = [
-            [Button.inline("💬 Chat", b"chat"),
-             Button.inline("🎨 Create Image (Beta)", b"gen_image")],
-            [Button.inline("❓ Help", b"help"),
-             Button.inline("ℹ️ About", b"about")],
-            [Button.inline("🔧 Settings", b"settings")]
+            [Button.inline(get_text(user_id, 'chat'), b"chat"),
+             Button.inline(get_text(user_id, 'score'), b"score")],
+            [Button.inline(get_text(user_id, 'help'), b"help"),
+             Button.inline(get_text(user_id, 'about'), b"about")],
+            [Button.inline(get_text(user_id, 'settings'), b"settings"),
+             Button.inline(get_text(user_id, 'subscription'), b"subscription")]
         ]
+        
+        # Add developer button if user is a developer
+        if is_developer(user_id):
+            buttons.insert(1, [Button.inline(get_text(user_id, 'developer'), b"developer")])
         
         # If there's an active menu message, edit it instead of creating a new one
         if user_id in active_messages:
@@ -1122,725 +1944,341 @@ async def main():
         
         user_menu_state[user_id] = 'main'
 
-    @client.on(events.NewMessage(pattern='/help'))
-    async def help_command_handler(event):
-        """Handle the /help command"""
+    @client.on(events.NewMessage(pattern='/subscription'))
+    async def subscription_command_handler(event):
+        """Handle the /subscription command"""
         user_id = event.sender_id
-        log_command(user_id, '/help')
+        log_command(user_id, '/subscription')
         
-        # Get all commands
-        commands = get_available_commands()
-        command_list = "\n".join([f"• {cmd['command']} - {cmd['description']}" for cmd in commands])
-        
-        help_text = f"""
-❓ **{BOT_NAME} Help Guide**
+        await subscription_handler(event)
 
-**Available Commands:**
-{command_list}
+    @client.on(events.CallbackQuery(data=b"subscription"))
+    async def subscription_handler(event):
+        """Handle subscription menu"""
+        user_id = event.sender_id
         
-**💡 Quick Tips:**
-• Just type a message to chat with me 😊
-• Use inline buttons for navigation ⌨️
-• I remember our conversations and learn from them 🧠
-• Ask me anything, and I'll do my best to help! 😉
+        # Get subscription status
+        is_subscribed = is_user_subscribed(user_id)
+        end_date = get_subscription_end_date(user_id)
         
-Need more help? Join our community: {SOCIAL_LINKS["📢 Community"]}
+        # Get user's score
+        score = get_user_score(user_id)
+        
+        if is_subscribed and end_date:
+            status_text = get_text(user_id, 'subscription_active', date=end_date.strftime("%Y-%m-%d"))
+        else:
+            status_text = get_text(user_id, 'subscription_inactive')
+        
+        subscription_text = f"""
+        💎 **{get_text(user_id, 'subscription')}**
+        
+        {status_text}
+        
+        {get_text(user_id, 'total_points', points=score)}
         """
         
-        buttons = [Button.inline("◀️ Back to Menu", b"back_to_menu")]
+        buttons = [
+            [Button.inline(get_text(user_id, 'buy_subscription'), b"buy_subscription"),
+             Button.inline(get_text(user_id, 'redeem_code'), b"redeem_code")],
+            [Button.inline(get_text(user_id, 'subscription_benefits'), b"subscription_benefits")]
+        ]
         
-        if user_id in active_messages:
-            try:
-                await client.edit_message(user_id, active_messages[user_id], help_text, buttons=buttons)
-            except:
-                message = await event.respond(help_text, buttons=buttons)
+        # Add memory import/export buttons for subscribers
+        if is_subscribed:
+            buttons.insert(1, [
+                Button.inline(get_text(user_id, 'memory_import'), b"memory_import"),
+                Button.inline(get_text(user_id, 'memory_export'), b"memory_export")
+            ])
+        
+        # Add code generation button for developers
+        if is_developer(user_id):
+            buttons.append([Button.inline(get_text(user_id, 'generate_code'), b"generate_code")])
+        
+        buttons.append([Button.inline(get_text(user_id, 'back'), b"back_to_menu")])
+        
+        # Edit the existing message or send a new one
+        try:
+            if isinstance(event, events.CallbackQuery.Event):
+                await event.edit(subscription_text, buttons=buttons)
+            else:
+                message = await event.respond(subscription_text, buttons=buttons)
                 active_messages[user_id] = message.id
-        else:
-            message = await event.respond(help_text, buttons=buttons)
+        except Exception as e:
+            logger.error(f"Error displaying subscription menu: {e}")
+            message = await client.send_message(user_id, subscription_text, buttons=buttons)
             active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'help'
+        
+        user_menu_state[user_id] = 'subscription'
 
-    @client.on(events.NewMessage(pattern='/newchat'))
-    async def newchat_handler(event):
-        """Handle the /newchat command to start a fresh conversation"""
-        user_id = event.sender_id
-        first_name = await get_user_name(user_id)
-        log_command(user_id, '/newchat')
-        
-        # Reset conversation context
-        start_new_conversation(user_id)
-        
-        await event.respond(
-            f"🔄 Started a fresh conversation, {first_name}! What would you like to talk about?"
-        )
-
-    @client.on(events.NewMessage(pattern='/facts'))
-    async def facts_handler(event):
-        """Show what the bot has learned about the user"""
-        user_id = event.sender_id
-        log_command(user_id, '/facts')
-        
-        await event.respond("🧠 Let me gather what I know about you...")
-        summary = await get_user_facts_summary(user_id)
-        
-        buttons = [Button.inline("◀️ Back to Menu", b"back_to_menu")]
-        
-        if user_id in active_messages:
-            try:
-                await client.edit_message(user_id, active_messages[user_id], summary, buttons=buttons)
-            except:
-                message = await event.respond(summary, buttons=buttons)
-                active_messages[user_id] = message.id
-        else:
-            message = await event.respond(summary, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'facts'
-
-    @client.on(events.CallbackQuery(data=b"terms"))
-    async def terms_handler(event):
+    @client.on(events.CallbackQuery(data=b"subscription_benefits"))
+    async def subscription_benefits_handler(event):
+        """Show subscription benefits"""
         user_id = event.sender_id
         
-        terms_text = """
-🤝 **Our Friendship Rules:**
+        benefits_text = f"""
+        🌟 **{get_text(user_id, 'subscription_benefits')}**
         
-1. Be kind to each other 😊
-2. No bad vibes allowed 🚫
-3. Have fun together! 🧩
-4. I'll remember our chats to serve you better 🤔
-5. You can delete your data anytime 🗑️
+        **1. {get_text(user_id, 'memory_import')} 📥**
+        • Import your memory from JSON files
+        • Restore your bot's knowledge about you
         
-That's it! Simple, right? 😄
+        **2. {get_text(user_id, 'memory_export')} 📤**
+        • Export your memory to JSON files
+        • Back up what the bot knows about you
+        
+        **3. Unlimited Memory 🧠**
+        • No limit on facts the bot can remember
+        • Free users limited to {FREE_MEMORY_LIMIT} facts
+        
+        **4. Premium Bot Creation 🤖**
+        • Create bots without attribution
+        • Access to premium bot features
+        
+        **Pricing:**
+        • {get_text(user_id, 'monthly_subscription')}
+        • {get_text(user_id, 'yearly_subscription')}
+        
+        Earn points by chatting with the bot!
+        Each message earns you points based on engagement.
         """
         
-        buttons = [Button.inline("◀️ Back", b"back_to_menu")]
+        buttons = [Button.inline(get_text(user_id, 'back'), b"subscription")]
         
-        # Edit the existing message instead of sending a new one
-        try:
-            await event.edit(terms_text, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, terms_text, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'terms'
+        await event.edit(benefits_text, buttons=buttons)
+        user_menu_state[user_id] = 'subscription_benefits'
 
-    @client.on(events.CallbackQuery(data=b"help"))
-    async def help_handler(event):
+    @client.on(events.CallbackQuery(data=b"buy_subscription"))
+    async def buy_subscription_handler(event):
+        """Handle subscription purchase"""
         user_id = event.sender_id
         
-        # Get all commands
-        commands = get_available_commands()
-        command_list = "\n".join([f"• {cmd['command']} - {cmd['description']}" for cmd in commands])
+        # Get user's score
+        score = get_user_score(user_id)
         
-        help_text = f"""
-❓ **{BOT_NAME} Help Guide**
-
-**Available Commands:**
-{command_list}
+        subscription_text = f"""
+        💰 **{get_text(user_id, 'buy_subscription')}**
         
-**💡 Quick Tips:**
-• Just type a message to chat with me 😊
-• Use inline buttons for navigation ⌨️
-• I remember our conversations and learn from them 🧠
-• Ask me anything, and I'll do my best to help! 😉
+        {get_text(user_id, 'total_points', points=score)}
         
-Need more help? Join our community: {SOCIAL_LINKS["📢 Community"]}
-        """
+        **{get_text(user_id, 'subscription_benefits')}:**
+        • Unlimited memory storage 🧠
+        • Memory import/export 📥📤
+        • Premium bot creation 🤖
+        • No attribution when creating bots 🏷️
         
-        buttons = [Button.inline("◀️ Back", b"back_to_menu")]
-        
-        # Edit the existing message instead of sending a new one
-        try:
-            await event.edit(help_text, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, help_text, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'help'
-
-    @client.on(events.CallbackQuery(data=b"about"))
-    async def about_handler(event):
-        user_id = event.sender_id
-        
-        about_text = f"""
-**ℹ️ About {BOT_NAME} :**
-Copyright (c) 2025 CodeAra
-
-Designed by {COMPANY} in Harrach
-
-**• 🧑‍💻 Owner:** {FOUNDER}
-**• 🔢 Version:** {BOT_VERSION}
-**• 📅 Build Date:** 19-04-2025
-**• ⬆️ Update Date:** {DATE_UPDATE}
-**• 🔤 Build ID:** {BUILD_ID}
-
-**✨ What's New**
-• Reactivate bot 🔁
-• Advanced AI chat with Gemini 2.0 🤖
-• Conversation memory & learning 🧠
-• Numbered message tracking 🔎
-• Image generation (Beta) 🖼️
-• Data export & privacy controls 🗂️
-
-        """
-        
-        buttons = [Button.inline("◀️ Back", b"back_to_menu")]
-        
-        # Edit the existing message instead of sending a new one
-        try:
-            await event.edit(about_text, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, about_text, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'about'
-
-    @client.on(events.CallbackQuery(data=b"settings"))
-    async def settings_handler(event):
-        user_id = event.sender_id
-        
-        settings_text = """
-🔧 **Settings**
-        
-Choose an option:
+        **{get_text(user_id, 'choose_plan')}:**
         """
         
         buttons = [
-            [Button.inline("🧠 Memory Settings", b"memory_settings"),
-             Button.inline("🗂️ Data Management", b"data_management")],
-            [Button.inline("◀️ Back to Menu", b"back_to_menu")]
+            [Button.inline(get_text(user_id, 'monthly_subscription'), b"buy_monthly")],
+            [Button.inline(get_text(user_id, 'yearly_subscription'), b"buy_yearly")],
+            [Button.inline(get_text(user_id, 'back'), b"subscription")]
         ]
         
-        # Edit the existing message instead of sending a new one
-        try:
-            await event.edit(settings_text, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, settings_text, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'settings'
+        await event.edit(subscription_text, buttons=buttons)
+        user_menu_state[user_id] = 'buy_subscription'
 
-    @client.on(events.CallbackQuery(data=b"chat"))
-    async def chat_handler(event):
-        user_id = event.sender_id
-        first_name = await get_user_name(user_id)
-        
-        chat_text = f"""
-💬 **Chat Mode**
-        
-Hey {first_name}! I'm ready to chat with you. Just type a message, and I'll respond! 🤗
-        
-Need ideas? You could:
-• Ask me a question 🗨️
-• Tell me about your day 💡
-• Discuss a topic you're interested in 📄
-• Get help with a problem 🪛
-        
-I'll remember our conversation and learn from it.
-        """
-        
-        buttons = [
-            [Button.inline("🔄 New Conversation", b"new_conversation")],
-            [Button.inline("◀️ Back to Menu", b"back_to_menu")]
-        ]
-        
-        # Edit the existing message instead of sending a new one
-        try:
-            await event.edit(chat_text, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, chat_text, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'chat'
-
-    @client.on(events.CallbackQuery(data=b"new_conversation"))
-    async def new_conversation_handler(event):
-        user_id = event.sender_id
-        first_name = await get_user_name(user_id)
-        
-        # Reset conversation context
-        start_new_conversation(user_id)
-        
-        new_chat_text = f"""
-        🔄 Started a fresh conversation, {first_name}!
-        
-        What would you like to talk about today?
-        """
-        
-        buttons = [Button.inline("◀️ Back to Menu", b"back_to_menu")]
-        
-        # Edit the existing message instead of sending a new one
-        try:
-            await event.edit(new_chat_text, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, new_chat_text, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'chat'
-
-    @client.on(events.CallbackQuery(data=b"gen_image"))
-    async def gen_image_handler(event):
+    @client.on(events.CallbackQuery(data=b"buy_monthly"))
+    async def buy_monthly_handler(event):
+        """Handle monthly subscription purchase"""
         user_id = event.sender_id
         
-        image_prompt_text = """
-🎨 **Image Generation (Beta) **
-*Note: Feature will be removed. 🚧*     
-Describe the image you'd like me to create:
-• Be specific about what you want to see
-• Include details about style, mood, and elements
-• Example: "A sunset over mountains with a lake in the foreground, watercolor style"
-       
-Type your description now, and I'll create the image!
-        """
+        # Process purchase
+        success, result, points_needed = purchase_subscription(user_id, "monthly")
         
-        buttons = [Button.inline("◀️ Back", b"back_to_menu")]
-        
-        # Edit the existing message instead of sending a new one
-        try:
-            await event.edit(image_prompt_text, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, image_prompt_text, buttons=buttons)
-            active_messages[user_id] = message.id
+        if success:
+            success_text = f"""
+            ✅ **{get_text(user_id, 'subscription_success', date=result)}**
             
-        user_sessions[user_id]['awaiting_image_prompt'] = True
-        user_menu_state[user_id] = 'image_gen'
-
-    @client.on(events.CallbackQuery(data=b"memory_settings"))
-    async def memory_settings_handler(event):
-        user_id = event.sender_id
-        
-        memory_text = """
-🧠 **Memory Settings**
-        
-Control how I remember and learn from our conversations:
-        """
-        
-        buttons = [
-            [Button.inline("👁️ View My Data", b"view_data"),
-             Button.inline("🗑️ Delete My Data", b"delete_data")],
-            [Button.inline("◀️ Back to Settings", b"settings")]
-        ]
-        
-        # Edit the existing message instead of sending a new one
-        try:
-            await event.edit(memory_text, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, memory_text, buttons=buttons)
-            active_messages[user_id] = message.id
+            You now have access to all premium features:
+            • Unlimited memory storage 🧠
+            • Memory import/export 📥📤
+            • Premium bot creation 🤖
+            • No attribution when creating bots 🏷️
             
-        user_menu_state[user_id] = 'memory_settings'
-
-    @client.on(events.CallbackQuery(data=b"data_management"))
-    async def data_management_handler(event):
-        user_id = event.sender_id
-        
-        # Get user stats
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        
-        cursor.execute("SELECT COUNT(*) FROM conversations WHERE user_id = ?", (user_id,))
-        message_count = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT COUNT(*) FROM user_facts WHERE user_id = ?", (user_id,))
-        facts_count = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT first_seen FROM users WHERE user_id = ?", (user_id,))
-        first_seen_row = cursor.fetchone()
-        first_seen = datetime.fromisoformat(first_seen_row[0]) if first_seen_row else datetime.now()
-        
-        conn.close()
-        
-        days_known = (datetime.now() - first_seen).days or 1
-        
-        data_text = f"""
-        📊 **Your Data**
-        
-        Messages exchanged: {message_count}
-        Facts I've learned: {facts_count}
-        Days we've known each other: {days_known}
-        
-        What would you like to do?
-        """
-        
-        buttons = [
-            [Button.inline("📤 Export Data", b"export_data"),
-             Button.inline("🗑️ Delete Data", b"delete_data")],
-            [Button.inline("◀️ Back to Settings", b"settings")]
-        ]
-        
-        # Edit the existing message instead of sending a new one
-        try:
-            await event.edit(data_text, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, data_text, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'data_management'
-
-    @client.on(events.CallbackQuery(data=b"view_data"))
-    async def view_data_handler(event):
-        user_id = event.sender_id
-        
-        # Get user facts summary
-        await event.edit("🧠 Gathering what I know about you...")
-        summary = await get_user_facts_summary(user_id)
-        
-        buttons = [Button.inline("◀️ Back", b"memory_settings")]
-        
-        # Edit the existing message with the summary
-        try:
-            await event.edit(summary, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, summary, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'view_data'
-
-    @client.on(events.CallbackQuery(data=b"export_data"))
-    async def export_data_handler(event):
-        user_id = event.sender_id
-        
-        await event.edit("📤 Preparing your data export... Please wait.")
-        
-        filename = await export_conversations(user_id)
-        if filename:
-            with open(filename, 'rb') as f:
-                await client.send_file(
-                    user_id,
-                    f,
-                    caption="Here's your conversation history export! 📊",
-                    buttons=Button.inline("◀️ Back", b"data_management")
-                )
-            
-            # Send a follow-up message to explain the data
-            await client.send_message(
-                user_id,
-                """
-📋 **About Your Data Export**
-                
-The JSON file contains:
-• All your conversations with me 🗨️
-• Message timestamps 🕒
-• Conversation IDs and message numbers 🔢
-
-You can open this file with any text editor or JSON viewer.
-                """
-            )
-        else:
-            await event.edit(
-                "Sorry, I couldn't export your data right now. Please try again later.",
-                buttons=Button.inline("◀️ Back", b"data_management")
-            )
-
-    @client.on(events.CallbackQuery(data=b"delete_data"))
-    async def delete_data_handler(event):
-        user_id = event.sender_id
-        
-        delete_text = """
-⚠️ **Delete Your Data**
-        
-This will delete ALL your data, including:
-• Conversation history 🕒
-• Learned facts about you 🧠
-• Preferences and settings 🔧
-        
-This action CANNOT be undone. Are you sure?
-        """
-        
-        buttons = [
-            [Button.inline("✅ Yes, delete everything", b"confirm_delete"),
-             Button.inline("❌ No, keep my data", b"data_management")]
-        ]
-        
-        # Edit the existing message
-        try:
-            await event.edit(delete_text, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, delete_text, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'delete_data'
-
-    @client.on(events.CallbackQuery(data=b"confirm_delete"))
-    async def confirm_delete_handler(event):
-        user_id = event.sender_id
-        
-        await event.edit("🗑️ Deleting your data... Please wait.")
-        
-        try:
-            conn = sqlite3.connect(DB_PATH)
-            cursor = conn.cursor()
-            
-            # Delete conversations
-            cursor.execute("DELETE FROM conversations WHERE user_id = ?", (user_id,))
-            
-            # Delete facts
-            cursor.execute("DELETE FROM user_facts WHERE user_id = ?", (user_id,))
-            
-            # Reset user preferences but keep the user entry
-            cursor.execute(
-                """
-                UPDATE users 
-                SET personality_traits = NULL, preferences = NULL, interests = NULL
-                WHERE user_id = ?
-                """,
-                (user_id,)
-            )
-            
-            conn.commit()
-            conn.close()
-            
-            # Reset conversation context
-            if user_id in conversation_contexts:
-                del conversation_contexts[user_id]
-            start_new_conversation(user_id)
-            
-            success_text = """
-            ✅ **Data Deleted Successfully**
-            
-All your data has been deleted. I've forgotten:
-• Our conversation history 🕒
-• Facts I learned about you 🧠
-• Your preferences and interests 👁️‍🗨️
-            
-We're starting fresh!
+            Enjoy your premium experience!
             """
             
-            buttons = [Button.inline("◀️ Back to Menu", b"back_to_menu")]
+            buttons = [Button.inline(get_text(user_id, 'back'), b"subscription")]
             await event.edit(success_text, buttons=buttons)
+        else:
+            if result == "not_enough_points":
+                error_text = f"""
+                ❌ **{get_text(user_id, 'not_enough_points', points=points_needed)}**
+                
+                Keep chatting to earn more points!
+                Each message earns you points based on engagement.
+                """
+            else:
+                error_text = "❌ An error occurred. Please try again later."
             
-        except Exception as e:
-            logger.error(f"Error deleting user data: {e}")
-            error_text = "Sorry, I couldn't delete your data right now. Please try again later."
-            buttons = [Button.inline("◀️ Back", b"data_management")]
+            buttons = [Button.inline(get_text(user_id, 'back'), b"buy_subscription")]
             await event.edit(error_text, buttons=buttons)
+        
+        user_menu_state[user_id] = 'subscription_result'
 
-    @client.on(events.CallbackQuery(data=b"back_to_menu"))
-    async def back_to_menu_handler(event):
+    @client.on(events.CallbackQuery(data=b"buy_yearly"))
+    async def buy_yearly_handler(event):
+        """Handle yearly subscription purchase"""
         user_id = event.sender_id
-        first_name = await get_user_name(user_id)
         
-        menu_msg = f"""
-🌟 {BOT_NAME} Menu 🌟
+        # Process purchase
+        success, result, points_needed = purchase_subscription(user_id, "yearly")
         
-Hey {first_name}! What would you like to do today?
+        if success:
+            success_text = f"""
+            ✅ **{get_text(user_id, 'subscription_success', date=result)}**
+            
+            You now have access to all premium features for a full year:
+            • Unlimited memory storage 🧠
+            • Memory import/export 📥📤
+            • Premium bot creation 🤖
+            • No attribution when creating bots 🏷️
+            
+            Enjoy your premium experience!
+            """
+            
+            buttons = [Button.inline(get_text(user_id, 'back'), b"subscription")]
+            await event.edit(success_text, buttons=buttons)
+        else:
+            if result == "not_enough_points":
+                error_text = f"""
+                ❌ **{get_text(user_id, 'not_enough_points', points=points_needed)}**
+                
+                Keep chatting to earn more points!
+                Each message earns you points based on engagement.
+                """
+            else:
+                error_text = "❌ An error occurred. Please try again later."
+            
+            buttons = [Button.inline(get_text(user_id, 'back'), b"buy_subscription")]
+            await event.edit(error_text, buttons=buttons)
+        
+        user_menu_state[user_id] = 'subscription_result'
+
+    @client.on(events.CallbackQuery(data=b"redeem_code"))
+    async def redeem_code_handler(event):
+        """Handle code redemption"""
+        user_id = event.sender_id
+        
+        redeem_text = f"""
+        🎟️ **{get_text(user_id, 'redeem_code')}**
+        
+        {get_text(user_id, 'code_redemption')}
+        
+        Reply to this message with your code.
         """
         
-        buttons = [
-            [Button.inline("💬 Chat", b"chat"),
-             Button.inline("🎨 Create Image (Beta)", b"gen_image")],
-            [Button.inline("❓ Help", b"help"),
-             Button.inline("ℹ️ About", b"about")],
-            [Button.inline("🔧 Settings", b"settings")]
-        ]
+        buttons = [Button.inline(get_text(user_id, 'back'), b"subscription")]
         
         # Edit the existing message
-        try:
-            await event.edit(menu_msg, buttons=buttons)
-        except:
-            # If edit fails for some reason, send a new message
-            message = await client.send_message(user_id, menu_msg, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'main'
+        await event.edit(redeem_text, buttons=buttons)
+        
+        # Set up session to await code
+        user_sessions[user_id]['awaiting_redemption_code'] = True
+        user_menu_state[user_id] = 'redeem_code'
 
-    @client.on(events.NewMessage(pattern='/upload'))
-    async def upload_handler(event):
+    @client.on(events.CallbackQuery(data=b"generate_code"))
+    async def generate_code_handler(event):
+        """Handle code generation (for developers)"""
         user_id = event.sender_id
-        log_command(user_id, '/upload')
         
-        upload_text = """
-📁 **File Upload (Beta)**
-*Note: Feature will be removed. 🚧*        
-You can send me any file up to 5MB! I'll keep it safe for you.
+        # Check if user is a developer
+        if not is_developer(user_id):
+            await event.answer("Developer access required")
+            return
         
-Supported file types:
-• Images (jpg, png, etc.) 🖼️
-• Documents (pdf, docx, txt, etc.) 📄
-• Audio files 🎵
-• Video files (small clips) 📹
+        generate_text = f"""
+        🎫 **{get_text(user_id, 'generate_code')}**
         
-Just send the file as an attachment.
-        """
-        
-        buttons = [Button.inline("◀️ Back to Menu", b"back_to_menu")]
-        
-        if user_id in active_messages:
-            try:
-                await client.edit_message(user_id, active_messages[user_id], upload_text, buttons=buttons)
-            except:
-                message = await event.respond(upload_text, buttons=buttons)
-                active_messages[user_id] = message.id
-        else:
-            message = await event.respond(upload_text, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_menu_state[user_id] = 'upload'
-
-    @client.on(events.NewMessage(pattern='/generate'))
-    async def generate_handler(event):
-        user_id = event.sender_id
-        log_command(user_id, '/generate')
-        
-        generate_text = """
-🎨 **Image Generation (Beta) **
- *Note: Feature will be removed. 🚧*       
-Describe the image you'd like me to create:
-• Be specific about what you want to see
-• Include details about style, mood, and elements
-• Example: "A sunset over mountains with a lake in the foreground, watercolor style"
-        
-Type your description now, and I'll create the image!
-        """
-        
-        buttons = [Button.inline("◀️ Back to Menu", b"back_to_menu")]
-        
-        if user_id in active_messages:
-            try:
-                await client.edit_message(user_id, active_messages[user_id], generate_text, buttons=buttons)
-            except:
-                message = await event.respond(generate_text, buttons=buttons)
-                active_messages[user_id] = message.id
-        else:
-            message = await event.respond(generate_text, buttons=buttons)
-            active_messages[user_id] = message.id
-            
-        user_sessions[user_id]['awaiting_image_prompt'] = True
-        user_menu_state[user_id] = 'image_gen'
-
-    @client.on(events.NewMessage(pattern='/export'))
-    async def export_handler(event):
-        user_id = event.sender_id
-        log_command(user_id, '/export')
-        
-        await event.respond("📤 Preparing your data export... Please wait.")
-        
-        filename = await export_conversations(user_id)
-        if filename:
-            with open(filename, 'rb') as f:
-                await client.send_file(
-                    user_id,
-                    f,
-                    caption="Here's your conversation history export! 📊"
-                )
-        else:
-            await event.respond("Sorry, I couldn't export your data right now. Please try again later.")
-
-    @client.on(events.NewMessage(pattern='/forget'))
-    async def forget_handler(event):
-        user_id = event.sender_id
-        log_command(user_id, '/forget')
-        
-        delete_text = """
-⚠️ **Delete Your Data**
-        
-This will delete ALL your data, including:
-• Conversation history 🕒
-• Learned facts about you 🧠
-• Preferences and settings 🔧
-        
-This action CANNOT be undone. Are you sure?
+        Choose the type of code to generate:
         """
         
         buttons = [
-            [Button.inline("✅ Yes, delete everything", b"confirm_delete"),
-             Button.inline("❌ No, keep my data", b"back_to_menu")]
+            [Button.inline(get_text(user_id, 'code_type_monthly'), b"gen_code_monthly"),
+             Button.inline(get_text(user_id, 'code_type_yearly'), b"gen_code_yearly")],
+            [Button.inline(get_text(user_id, 'back'), b"subscription")]
         ]
         
-        message = await event.respond(delete_text, buttons=buttons)
-        active_messages[user_id] = message.id
-        user_menu_state[user_id] = 'delete_data'
+        await event.edit(generate_text, buttons=buttons)
+        user_menu_state[user_id] = 'generate_code'
 
-    @client.on(events.NewMessage(func=lambda e: e.document or e.photo))
-    async def file_handler(event):
-        user_id = event.sender_id
-        first_name = await get_user_name(user_id)
-        
-        if event.document and event.document.size > MAX_FILE_SIZE:
-            await event.respond(f"Oops! That file is too big for me to handle (max: {MAX_FILE_SIZE/1024/1024}MB) 🤗")
-            return
-        
-        # Process the file
-        file_type = "document" if event.document else "photo"
-        file_name = event.document.attributes[0].file_name if event.document else "photo.jpg"
-        
-        await event.respond(f"Got your {file_type} '{file_name}', {first_name}! 📁 Safe and sound with me.")
-        
-        # Add a follow-up question based on file type
-        if file_type == "photo":
-            await asyncio.sleep(1)
-            await event.respond("That's a nice image! Would you like me to describe what I see in it?")
-        elif file_name.lower().endswith(('.txt', '.doc', '.docx', '.pdf')):
-            await asyncio.sleep(1)
-            await event.respond("Would you like me to help you analyze or summarize this document?")
-
-    @client.on(events.NewMessage)
-    async def message_handler(event):
+    @client.on(events.CallbackQuery(data=b"gen_code_monthly"))
+    async def gen_code_monthly_handler(event):
+        """Generate monthly subscription code"""
         user_id = event.sender_id
         
-        # Ignore commands
-        if event.text.startswith('/'):
+        # Generate code
+        code = generate_redemption_code("monthly")
+        
+        if code:
+            code_text = f"""
+            ✅ **{get_text(user_id, 'code_generated', code=code)}**
+            
+            This code can be used once to activate a monthly subscription.
+            """
+        else:
+            code_text = "❌ Error generating code. Please try again."
+        
+        buttons = [Button.inline(get_text(user_id, 'back'), b"generate_code")]
+        
+        await event.edit(code_text, buttons=buttons)
+        user_menu_state[user_id] = 'code_generated'
+
+    @client.on(events.CallbackQuery(data=b"gen_code_yearly"))
+    async def gen_code_yearly_handler(event):
+        """Generate yearly subscription code"""
+        user_id = event.sender_id
+        
+        # Generate code
+        code = generate_redemption_code("yearly")
+        
+        if code:
+            code_text = f"""
+            ✅ **{get_text(user_id, 'code_generated', code=code)}**
+            
+            This code can be used once to activate a yearly subscription.
+            """
+        else:
+            code_text = "❌ Error generating code. Please try again."
+        
+        buttons = [Button.inline(get_text(user_id, 'back'), b"generate_code")]
+        
+        await event.edit(code_text, buttons=buttons)
+        user_menu_state[user_id] = 'code_generated'
+
+    @client.on(events.CallbackQuery(data=b"memory_import"))
+    async def memory_import_handler(event):
+        """Handle memory import"""
+        user_id = event.sender_id
+        
+        # Check if user is subscribed
+        if not is_user_subscribed(user_id):
+            premium_text = f"""
+            🔒 **{get_text(user_id, 'premium_feature')}**
+            
+            Memory import is a premium feature.
+            Subscribe to unlock this feature.
+            """
+            
+            buttons = [Button.inline(get_text(user_id, 'back'), b"subscription")]
+            await event.edit(premium_text, buttons=buttons)
             return
         
-        # Check if we're awaiting an image prompt
-        if user_id in user_sessions and user_sessions[user_id].get('awaiting_image_prompt'):
-            user_sessions[user_id]['awaiting_image_prompt'] = False
-            
-            # Generate the image
-            await event.respond("🎨 Working on your vision... This might take a moment.")
-            
-            async with client.action(event.chat_id, 'upload_photo'):
-                img = await generate_image(event.text)
-                if img:
-                    # Log the image generation
-                    log_conversation(user_id, f"[IMAGE REQUEST] {event.text}", "[IMAGE GENERATED]")
-                    
-                    await client.send_file(
-                        user_id,
-                        img,
-                        caption=f"Here's your creation based on: '{event.text}' ✨",
-                        buttons=Button.inline("🔄 Create Another", b"gen_image")
-                    )
-                else:
-                    await event.respond(
-                        "Sorry, I couldn't generate that image. Let's try a different description?",
-                        buttons=Button.inline("🔄 Try Again", b"gen_image")
-                    )
-            return
+        import_text = f"""
+        📥 **{get_text(user_id, 'memory_import')}**
         
-        # Regular chat message
-        first_name = await get_user_name(user_id)
+        Please send me a JSON file containing your memory data.
+        The file should have this format:
         
-        # Update typing indicator
-        async with client.action(event.chat_id, 'typing'):
-            # Generate response with enhanced context
-            response_text, context_used = await generate_ai_response(event.text, user_id, first_name)
-            
-            # Log the conversation with context tracking
-            message_number = log_conversation(user_id, event.text, response_text, context_used)
-            
-            # Send the response
-            await event.respond(response_text)
-
-    await client.run_until_disconnected()
-
-if __name__ == "__main__":
-    try:
-        keep_alive()  # Start the Flask server
-        asyncio.run(main())
-    except KeyboardInterrupt:
-        logger.info(f"{BOT_NAME} stopped peacefully")
-    except Exception as e:
-        logger.error(f"💔 Critical error: {e}")
+        ```json
+        {
+          "facts": [
+            {
+              "fact": "User likes programming",
+              "confidence": 0.9,
+              "category": "interest"
+            },
+            ...
+          ]
+        }
