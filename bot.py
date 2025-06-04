@@ -62,10 +62,10 @@ genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Constants
-BOT_VERSION = "2.0.1"
+BOT_VERSION = "2.1.5"
 BOT_NAME = "GlitchAI"
 COMPANY = "CodeAra"
-DATE_UPDATE = "17-05-2025"
+DATE_UPDATE = "05-06-2025"
 FOUNDER = "Wail Achouri"
 BUILD_ID = "GlitchAI Cyan Edition" 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
