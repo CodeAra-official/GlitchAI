@@ -62,12 +62,12 @@ genai.configure(api_key=GEMINI_API_KEY)
 model = genai.GenerativeModel('gemini-2.0-flash')
 
 # Constants
-BOT_VERSION = "2.1.5"
+BOT_VERSION = "3.0.0"
 BOT_NAME = "GlitchAI"
-COMPANY = "CodeAra"
-DATE_UPDATE = "05-06-2025"
+COMPANY = "Omnex Group"
+DATE_UPDATE = "21-06-2025"
 FOUNDER = "Wail Achouri"
-BUILD_ID = "GlitchAI Cyan Edition" 
+BUILD_ID = "NEXT" 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
 # Menu state tracking
@@ -750,7 +750,7 @@ Code Source
 https://github.com/CodeAra-official/GlitchAI
 
 Telegram bot link
-https://t.me/GlitchAI_1_Bot
+https://t.me/GlitchAI_DEV_Bot
 Telegram Channel link
 https://t.me/Code_Ara
 Number Phone Wail Achouri: +213 562 15 28 24
@@ -758,7 +758,7 @@ Discord : https://discord.gg/573r3gsgju
 
 MIT License
 
-Copyright (c) 2025 CodeAra
+Copyright (c) 2025 Omnex Group
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the “Software”), to deal
